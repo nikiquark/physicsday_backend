@@ -23,9 +23,9 @@ from django.views.static import serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('workshops/', include('workshops.urls')),
-    path('olympiads/', include('olympiads.urls')),
-    path('physicsday/', include('physicsday_event.urls')),
+    path('api/workshops/', include('workshops.urls')),
+    path('api/olympiads/', include('olympiads.urls')),
+    path('api/physicsday/', include('physicsday_event.urls')),
 ]
 
 if settings.DEBUG:
