@@ -1,0 +1,6 @@
+venv/
+static/
+migrations/
+*.pyc
+db.sqlite3
+.env
