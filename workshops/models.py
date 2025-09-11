@@ -29,7 +29,7 @@ class Participant(models.Model):
     email = models.EmailField(verbose_name='Email')
     phone = models.CharField(max_length=150, verbose_name='Контакт')
     city = models.CharField(max_length=150, verbose_name='Город')
-    school = models.CharField(max_length=200, verbose_name='Школа')
+    school = models.CharField(max_length=200, verbose_name='Школа', null=True, blank=True)
     class_number = models.IntegerField(verbose_name='Класс')
 
     workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE)

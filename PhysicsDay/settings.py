@@ -26,22 +26,44 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 DEBUG = os.getenv("ENVIRONMENT") == "DEBUG"
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'physicsday.ru']
+ALLOWED_HOSTS = ['physicsday.ru']
+if DEBUG:
+    ALLOWED_HOSTS += ['localhost', '127.0.0.1']
 # allow cors
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
     "https://physicsday.ru",
 ]
+
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://physicsday.ru",
+]
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
 CSRF_COOKIE_SECURE = not DEBUG 
 CSRF_COOKIE_HTTPONLY = False 
 CSRF_COOKIE_SAMESITE = 'Lax'
 
+SESSION_COOKIE_SECURE = not DEBUG
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# if DEBUG:
+#     CSRF_COOKIE_SAMESITE = 'None'
+#     SESSION_COOKIE_SAMESITE = 'None'
 
 # Application definition
 
