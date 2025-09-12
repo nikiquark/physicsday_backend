@@ -2,6 +2,9 @@ from django.db import models
 from rest_framework.exceptions import NotAcceptable
 # Create your models here.
 
+from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
+
 class Workshop(models.Model):
     name = models.CharField(max_length=100)
     restriction = models.CharField(max_length=100)
@@ -10,7 +13,6 @@ class Workshop(models.Model):
     limit = models.IntegerField()
     ordering = models.IntegerField()
     image = models.ImageField(default='default_logo.jpg', upload_to='workshops_images')
-
 
     def __str__(self):
         return f'{self.name} ({self.time})'
@@ -41,10 +43,19 @@ class Participant(models.Model):
         verbose_name = "Участник"
         verbose_name_plural = "Участники"
 
-    # save only if limit is not reached
     def save(self, *args, **kwargs):
-        if self.workshop.limit_left > 0:
-            super().save(*args, **kwargs)
-        else:
-            raise NotAcceptable()
-    
+        # Проверяем дублирование по ФИО и email
+        existing_participant = Participant.objects.filter(
+            name=self.name,
+            email=self.email
+        ).first()
+        
+        if existing_participant:
+            error_message = f"Вы уже зарегистрировались на «{existing_participant.workshop.name} {existing_participant.workshop.time}». Можно зарегистрироваться только на один мастер-класс."
+            raise ValidationError({"non_field_errors": [error_message]})
+        
+        # Проверяем лимит места
+        if self.workshop.limit_left <= 0:
+            raise ValidationError({"non_field_errors": ["К сожалению, места на этот мастер-класс закончились."]})
+        
+        super().save(*args, **kwargs)
