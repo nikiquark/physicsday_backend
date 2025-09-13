@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     'import_export',
     'physicsday_event',
     'olympiads',
+    'excursions',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

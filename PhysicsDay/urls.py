@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/workshops/', include('workshops.urls')),
     path('api/olympiads/', include('olympiads.urls')),
     path('api/physicsday/', include('physicsday_event.urls')),
+    path('api/excursions/', include('excursions.urls')),
 ]
 
 if settings.DEBUG:
