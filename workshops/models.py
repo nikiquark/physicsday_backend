@@ -6,13 +6,13 @@ from rest_framework.exceptions import ValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 class Workshop(models.Model):
-    name = models.CharField(max_length=100)
-    restriction = models.CharField(max_length=100)
-    time = models.CharField(max_length=100)
-    room = models.CharField(max_length=100)
-    limit = models.IntegerField()
-    ordering = models.IntegerField()
-    image = models.ImageField(default='default_logo.jpg', upload_to='workshops_images')
+    name = models.CharField(max_length=100, verbose_name='Название')
+    restriction = models.CharField(max_length=100, verbose_name='Возраст')
+    time = models.CharField(max_length=100, verbose_name='Время')
+    room = models.CharField(max_length=100, verbose_name='Аудитория')
+    limit = models.IntegerField(verbose_name='Ограничение')
+    ordering = models.IntegerField(verbose_name='Порядок')
+    image = models.ImageField(default='default_logo.jpg', upload_to='workshops_images', verbose_name='Изображение')
 
     def __str__(self):
         return f'{self.name} ({self.time})'
@@ -34,7 +34,7 @@ class Participant(models.Model):
     school = models.CharField(max_length=200, verbose_name='Школа', null=True, blank=True)
     class_number = models.IntegerField(verbose_name='Класс')
 
-    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE)
+    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, verbose_name='Мастер-класс')
 
     def __str__(self):
         return self.name
