@@ -13,6 +13,6 @@ class ParticipantResource(resources.ModelResource):
 
 @admin.register(models.Participant)
 class ParticipantAdmin(ImportExportModelAdmin):
-    list_display = ("name", 'class_number', "phone", 'email',)
+    list_display = ("name", 'class_number', "phone", 'email', "created_at")
     ordering = ("name",)
     resourse_classes = [ParticipantResource]    
