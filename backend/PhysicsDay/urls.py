@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/olympiads/', include('olympiads.urls')),
     path('api/physicsday/', include('physicsday_event.urls')),
     path('api/excursions/', include('excursions.urls')),
+    path('api/content/', include('content.urls')),
 ]
 
 # Медиа отдаются Django как запасной вариант: на проде тот же путь

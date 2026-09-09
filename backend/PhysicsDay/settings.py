@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     'workshops',
     'rest_framework',
     'import_export',
+    'content',
     'physicsday_event',
     'olympiads',
     'excursions',
