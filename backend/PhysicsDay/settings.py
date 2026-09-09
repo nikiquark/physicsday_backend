@@ -12,58 +12,74 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+
 import dotenv
+
 dotenv.load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
+def env_list(name, default=''):
+    """Читает переменную окружения со списком значений через запятую."""
+    return [item.strip() for item in os.getenv(name, default).split(',') if item.strip()]
+
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-DEBUG = os.getenv("ENVIRONMENT") == "DEBUG"
+DEBUG = os.getenv('ENVIRONMENT') == 'DEBUG'
 
-ALLOWED_HOSTS = ['physicsday.ru']
-if DEBUG:
-    ALLOWED_HOSTS += ['localhost', '127.0.0.1']
-# allow cors
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'dev-insecure-key-not-for-production'
+    else:
+        raise RuntimeError(
+            'Не задан DJANGO_SECRET_KEY. Скопируйте .env.example в .env и заполните его.'
+        )
+
+# Публичный адрес сайта. Из него собираются CSRF и CORS, чтобы домен
+# не был прописан в коде в трёх местах.
+SITE_URL = os.getenv('SITE_URL', 'https://physicsday.ru').rstrip('/')
+
+# Хост backend нужен обязательно: по нему в Django ходит серверный рендер
+# фронтенда по внутренней docker-сети.
+ALLOWED_HOSTS = env_list(
+    'DJANGO_ALLOWED_HOSTS',
+    'physicsday.ru,www.physicsday.ru,backend,localhost,127.0.0.1',
+)
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://physicsday.ru",
+_public_origins = [SITE_URL]
+if SITE_URL.startswith('https://') and '://www.' not in SITE_URL:
+    _public_origins.append(SITE_URL.replace('https://', 'https://www.', 1))
+
+_dev_origins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]
 
-if DEBUG:
-    CSRF_TRUSTED_ORIGINS += [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+CSRF_TRUSTED_ORIGINS = list(_public_origins)
+CORS_ALLOWED_ORIGINS = list(_public_origins)
 
-CORS_ALLOWED_ORIGINS = [
-    "https://physicsday.ru",
-]
 if DEBUG:
-    CORS_ALLOWED_ORIGINS += [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+    CSRF_TRUSTED_ORIGINS += _dev_origins
+    CORS_ALLOWED_ORIGINS += _dev_origins
 
-CSRF_COOKIE_SECURE = not DEBUG 
-CSRF_COOKIE_HTTPONLY = False 
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 SESSION_COOKIE_SECURE = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# if DEBUG:
-#     CSRF_COOKIE_SAMESITE = 'None'
-#     SESSION_COOKIE_SAMESITE = 'None'
+# За внешним nginx Django не видит, что соединение шифрованное.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
 
 # Application definition
 
@@ -91,6 +107,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -125,8 +142,13 @@ WSGI_APPLICATION = 'PhysicsDay.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'physicsday'),
+        'USER': os.getenv('POSTGRES_USER', 'physicsday'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'physicsday'),
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'CONN_MAX_AGE': 60,
     }
 }
 
@@ -155,7 +177,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Novosibirsk'
 
 USE_I18N = True
 
@@ -166,10 +188,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_ROOT = BASE_DIR / 'static'
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    # WhiteNoise отдаёт статику сам, чтобы админка работала даже без
+    # настроенного nginx. На проде тот же каталог параллельно смотрит
+    # nginx через docker-том — он быстрее, WhiteNoise остаётся запасным.
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 
 
 # Default primary key field type

@@ -29,7 +29,10 @@ urlpatterns = [
     path('api/excursions/', include('excursions.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += [
-        path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
-    ]
+# Медиа отдаются Django как запасной вариант: на проде тот же путь
+# перехватывает внешний nginx, который читает файлы из docker-тома напрямую.
+# Без этого фолбэка свежеразвёрнутый сайт остаётся без картинок, и причина
+# выясняется не сразу.
+urlpatterns += [
+    path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+]
