@@ -1,6 +1,5 @@
 "use client";
 
-import { Inter } from "next/font/google";
 import { motion } from "framer-motion";
 import { Calendar, Clock, Trophy, Monitor, LucideIcon } from "lucide-react";
 import Header from "@/components/Header";
@@ -11,6 +10,8 @@ import { Modal } from "@/components/ui/Modal";
 import { FlyingCats } from "@/components/animations/FlyingCats";
 import { SequentialFadeIn } from "@/components/animations/SequentialFadeIn";
 import { BENEFITS } from "@/lib/constants";
+import { RegistrationClosed } from "@/components/RegistrationClosed";
+import { getRegistration, type SiteContent } from "@/lib/content";
 
 import { 
   apiService, 
@@ -23,8 +24,6 @@ import {
   validateStudentForm,
   type StudentFormData 
 } from "@/hooks/useRegistrationForm";
-
-const inter = Inter({ subsets: ["latin"] });
 
 const initialFormData: StudentFormData = {
   name: '',
@@ -57,8 +56,26 @@ const BenefitCard = ({ icon: Icon, title, description }: {
   );
 };
 
-export default function OlympiadPage() {
+export default function OlympiadPage({ content }: { content: SiteContent }) {
+  const { settings, socials, olympiad_results: results } = content;
+  const registration = getRegistration(content, "olympiads");
+
+  // Итоги показываются только когда они есть и включены в админке.
+  const showResults = settings.show_olympiad_results && Boolean(results);
+
   const [isOpen, modalContent, showModal, closeModal] = useModal();
+
+  // Дедлайн приёма заявок берётся из окна регистрации, чтобы дата
+  // в шапке и фактическое закрытие приёма не разъезжались.
+  const registrationDeadline = registration.closes_at
+    ? `до ${new Date(registration.closes_at).toLocaleString("ru-RU", {
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Novosibirsk",
+      })}`
+    : "открыта";
 
   const handleFormSubmit = async (data: StudentFormData) => {
     try {
@@ -127,8 +144,7 @@ export default function OlympiadPage() {
 
   return (
     <main className="font-sans text-gray-900 scroll-smooth">
-      {/* Header */}
-      <Header />
+      <Header settings={settings} socials={socials} />
 
       {/* Hero Section */}
       <section className="relative min-h-screen bg-[#344EAD] text-white flex items-center justify-center pt-20">
@@ -166,39 +182,50 @@ export default function OlympiadPage() {
                 <Clock className="w-6 h-6 text-red-300" />
                 <div>
                   <div className="font-semibold">Регистрация</div>
-                  <div className="text-gray-200">до 10:00 2 октября</div>
+                  <div className="text-gray-200">{registrationDeadline}</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Calendar className="w-6 h-6 text-yellow-300" />
                 <div>
                   <div className="font-semibold">Даты проведения</div>
-                  <div className="text-gray-200">4 — 6 октября 2025</div>
+                  <div className="text-gray-200">{settings.olympiad_dates}</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Monitor className="w-6 h-6 text-blue-300" />
                 <div>
                   <div className="font-semibold">Формат</div>
-                  <div className="text-gray-200">дистанционный</div>
+                  <div className="text-gray-200">{settings.olympiad_format}</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Trophy className="w-6 h-6 text-green-300" />
                 <div>
                   <div className="font-semibold">Подведение итогов</div>
-                  <div className="text-gray-200">не позднее 31 октября 2025</div>
+                  <div className="text-gray-200">{settings.olympiad_results_date}</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <a 
-            href="#results" 
-            className="inline-block bg-white text-[#344EAD] font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300 hover:shadow-xl mb-4"
-          >
-            Итоги олимпиады
-          </a>
+          {showResults ? (
+            <a
+              href="#results"
+              className="inline-block bg-white text-[#344EAD] font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300 hover:shadow-xl mb-4"
+            >
+              Итоги олимпиады
+            </a>
+          ) : (
+            registration.is_open && (
+              <a
+                href="#register"
+                className="inline-block bg-white text-[#344EAD] font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300 hover:shadow-xl mb-4"
+              >
+                Зарегистрироваться
+              </a>
+            )
+          )}
         </div>
       </section>
 
@@ -221,199 +248,154 @@ export default function OlympiadPage() {
         </FadeInSection>
       </section>
 
+      {/* Registration Section */}
+      {!registration.is_open ? (
+        <RegistrationClosed state={registration} />
+      ) : (
+        <section id="register" className="py-16 bg-white px-4">
+          <FadeInSection>
+            <h2 className="text-center text-3xl font-bold mb-4">
+              Регистрация на олимпиаду
+            </h2>
+            <p className="text-center text-gray-600 mb-12">{registrationDeadline}</p>
+
+            <div className="max-w-xl mx-auto grid gap-6">
+              <input
+                name="name"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                type="text"
+                placeholder="ФИО"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
+              <input
+                name="email"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+              />
+              <input
+                name="phone"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                type="text"
+                placeholder="Телефон или ссылка на профиль ВК/Телеграм"
+                value={formData.phone}
+                onChange={handleInputChange}
+                required
+              />
+              <input
+                name="city"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                type="text"
+                placeholder="Город"
+                value={formData.city}
+                onChange={handleInputChange}
+                required
+              />
+              <input
+                name="school"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                type="text"
+                placeholder="Школа"
+                value={formData.school}
+                onChange={handleInputChange}
+                required
+              />
+              <select
+                name="class_number"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                value={formData.class_number}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="" disabled>
+                  Выберите класс
+                </option>
+                {Array.from({ length: 11 }, (_, i) => i + 1).map((num) => (
+                  <option key={num} value={num.toString()}>
+                    {num}
+                  </option>
+                ))}
+              </select>
+
+              <label className="flex items-center space-x-3">
+                <input
+                  name="agreement"
+                  type="checkbox"
+                  checked={formData.agreement}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 text-[#344EAD] rounded focus:ring-[#344EAD]"
+                  required
+                />
+                <span className="text-gray-700">{settings.consent_text}</span>
+              </label>
+
+              <button
+                className={`py-3 rounded-xl font-semibold transition w-full ${
+                  !isSubmitting
+                    ? "bg-[#344EAD] text-white hover:bg-[#2a3f92]"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+                onClick={onSubmitClick}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Регистрация..." : "Зарегистрироваться"}
+              </button>
+            </div>
+          </FadeInSection>
+        </section>
+      )}
+
       {/* Results Section */}
-      <section id="results" className="py-8 sm:py-16 bg-white px-4">
-        <FadeInSection>
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-center text-3xl md:text-4xl font-bold mb-4">Итоги олимпиады</h2>
-            
-            <div className="rounded-2xl p-8 mb-8">
-              <p className="text-lg text-gray-700 mb-6">
-                Дорогие друзья!<br/>
-                Экспертная комиссия завершила проверку работ ФизФест-олимпиады, и мы с радостью сообщаем вам результаты.
-              </p>
+      {showResults && results && (
+        <section id="results" className="py-8 sm:py-16 bg-white px-4">
+          <FadeInSection>
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-center text-3xl md:text-4xl font-bold mb-4">
+                Итоги олимпиады
+              </h2>
 
-              {/* 1 место */}
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <span className="text-3xl mr-3">🥇</span>
-                  <h3 className="text-xl md:text-2xl font-bold text-[#344EAD]">1 место ПОБЕДИТЕЛИ</h3>
-                </div>
-                
-                <div className="space-y-4 ml-6 md:ml-12">
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 1-4 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Бердюгин Михаил</li>
-                      <li>Горшкова Вероника</li>
-                      <li>Корниенко Георгий</li>
-                      <li>Минаев Роман</li>
-                      <li>Петросян Тарон</li>
-                      <li>Пилюгина Виктория</li>
-                      <li>Стефанов Тимофей</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 5-7 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Ермоленко Михаил</li>
-                      <li>Таранец Всеволод</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 8-9 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Сарапкин Александр</li>
-                      <li>Трясак Семён</li>
-                      <li>Шувалов Артём</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+              <div className="rounded-2xl p-8 mb-8">
+                {results.intro && (
+                  <p className="text-lg text-gray-700 mb-6">{results.intro}</p>
+                )}
 
-              {/* 2 место */}
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <span className="text-3xl mr-3">🥈</span>
-                  <h3 className="text-xl md:text-2xl font-bold text-[#344EAD]">2 место ПРИЗЁРЫ</h3>
-                </div>
-                
-                <div className="space-y-4 ml-6 md:ml-12">
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 1-4 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Волков Виктор</li>
-                      <li>Ефременко Тарас</li>
-                      <li>Калугина Светлана</li>
-                      <li>Пирожков Борис</li>
-                      <li>Репнёв Иван</li>
-                      <li>Сизов Роман</li>
-                      <li>Уфимцев Дмитрий</li>
-                      <li>Шевченко Артём</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 5-7 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Баранов Фёдор</li>
-                      <li>Батуков Иван</li>
-                      <li>Васильев Дмитрий</li>
-                      <li>Габов Петр</li>
-                      <li>Герасимов Максим</li>
-                      <li>Зайвий Таисия</li>
-                      <li>Захаров Савелий</li>
-                      <li>Костылев Кирилл</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 8-9 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Антонович Михаил</li>
-                      <li>Титов Степан</li>
-                      <li>Цветко Евгений</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 10-11 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Беляев Егор</li>
-                      <li>Куртубашев Артём</li>
-                      <li>Матвеев Ярослав</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+                {/* Списки победителей правятся в админке одним полем. */}
+                <div
+                  className="olympiad-results text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: results.body_html }}
+                />
 
-              {/* 3 место */}
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <span className="text-3xl mr-3">🥉</span>
-                  <h3 className="text-xl md:text-2xl font-bold text-[#344EAD]">3 место ПРИЗЁРЫ</h3>
-                </div>
-                
-                <div className="space-y-4 ml-6 md:ml-12">
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 5-7 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Багинский Андрей</li>
-                      <li>Гуревич Максим</li>
-                      <li>Иванов Александр</li>
-                      <li>Иванов Андрей</li>
-                      <li>Калмыкова Вероника</li>
-                      <li>Маркус Фёдор</li>
-                      <li>Мингулова Екатерина</li>
-                      <li>Скворцов Тимофей</li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-base md:text-lg mb-2 text-gray-800">🔹️ 8-9 классы</h4>
-                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Кириллова Диана</li>
-                      <li>Никулин Никита</li>
-                      <li>Сопотов Михаил</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Заключение */}
-              <div className="border-t-2 border-gray-200 pt-8 mt-8">
-                <div className="rounded-2xl p-6 md:p-8 mb-6">
-                  <div className="flex items-start">
-                    <p className="text-base md:text-lg text-gray-800 leading-relaxed">
-                      Поздравляем победителей и призеров ФизФест-олимпиады, а также благодарим всех, кто принял участие в решении олимпиадных задач.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="relative bg-gradient-to-br from-[#344EAD] to-[#2a3f92] text-white rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
-                  
-                  <div className="relative z-10">
-                    <div className="flex items-start mb-4">
-                      <h3 className="text-xl md:text-2xl font-bold">Церемония награждения</h3>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center">
-                        <Calendar className="w-5 h-5 mr-3 flex-shrink-0 text-yellow-300" />
-                        <span className="text-base md:text-lg"><strong>14 ноября 2025</strong></span>
-                      </div>
-                      
-                      <div className="flex items-center">
-                        <Clock className="w-5 h-5 mr-3 flex-shrink-0 text-yellow-300" />
-                        <span className="text-base md:text-lg"><strong>16:00</strong></span>
-                      </div>
-                      
-                      <div className="flex items-start">
-                        <Monitor className="w-5 h-5 mr-3 mt-1 flex-shrink-0 text-yellow-300" />
-                        <div className="text-base md:text-lg">
-                          <strong>Новосибирский государственный университет</strong><br/>
-                          <span className="text-gray-200">ул. Пирогова, 2, аудитория 317а</span>
-                        </div>
+                {settings.show_awards_ceremony && settings.awards_ceremony_html && (
+                  <div className="border-t-2 border-gray-200 pt-8 mt-8">
+                    <div className="relative bg-gradient-to-br from-[#344EAD] to-[#2a3f92] text-white rounded-2xl p-6 md:p-8 overflow-hidden shadow-xl">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                      <div className="relative z-10">
+                        <h3 className="text-xl md:text-2xl font-bold mb-4">
+                          Церемония награждения
+                        </h3>
+                        <div
+                          className="space-y-2 text-base md:text-lg"
+                          dangerouslySetInnerHTML={{
+                            __html: settings.awards_ceremony_html,
+                          }}
+                        />
                       </div>
                     </div>
-                    
-                    <p className="mt-6 text-sm md:text-base text-gray-200">
-                      Победители и призёры ФизФест-олимпиады, будем рады видеть вас на церемонии!
-                    </p>
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          </div>
-        </FadeInSection>
-      </section>
+          </FadeInSection>
+        </section>
+      )}
 
-      {/* Footer */}
-      <Footer />
+      <Footer settings={settings} socials={socials} />
 
       {/* Modal */}
       <Modal 

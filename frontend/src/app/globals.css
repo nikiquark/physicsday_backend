@@ -27,3 +27,35 @@ body {
 html{
   scroll-behavior: smooth;
 }
+/* Итоги олимпиады приходят из админки одним HTML-полем, поэтому списки
+   и заголовки внутри него нужно оформить явно: preflight Tailwind
+   сбрасывает маркеры и отступы. */
+.olympiad-results h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #344ead;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.olympiad-results h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.olympiad-results ul {
+  list-style: disc inside;
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.olympiad-results li {
+  margin-bottom: 0.25rem;
+}
+
+.olympiad-results p {
+  margin-top: 1rem;
+}

@@ -5,8 +5,14 @@ import { motion } from "framer-motion"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
 import ContactModal from "./ContactModal"
+import { type SiteSettings, type SocialLink } from "@/lib/content"
 
-export default function Header() {
+interface HeaderProps {
+    settings?: SiteSettings;
+    socials?: SocialLink[];
+}
+
+export default function Header({ settings, socials }: HeaderProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [contactModalOpen, setContactModalOpen] = useState(false);
 
@@ -58,6 +64,8 @@ export default function Header() {
             <ContactModal 
                 isOpen={contactModalOpen} 
                 onClose={() => setContactModalOpen(false)} 
+                settings={settings}
+                socials={socials}
             />
         </>
     )

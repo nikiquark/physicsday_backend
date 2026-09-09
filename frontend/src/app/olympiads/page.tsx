@@ -1,28 +1,17 @@
 import OlympiadPage from "./OlympiadPage";
+import { getSiteContent } from "@/lib/content";
+import { buildMetadata } from "@/lib/seo";
 
-import { Metadata } from 'next'
+export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: 'Олимпиады по физике для школьников 1-11 классов | ФизФест 2025 | НГУ Новосибирск',
-  description: 'Олимпиады по физике на ФизФест 2025 для школьников 1-11 классов. Соревнования, призы, дипломы. Регистрация до 2 октября в НГУ Новосибирск.',
-  keywords: 'олимпиада физика, физические олимпиады, НГУ олимпиада, школьная олимпиада физика, соревнования физика, ФизФест олимпиада, олимпиада Новосибирск',
-  
-  openGraph: {
-    title: 'Олимпиады по физике | ФизФест 2025 НГУ',
-    description: 'Олимпиады по физике для школьников 1-11 классов. Призы, дипломы, возможность проявить талант. Регистрация до 2 октября!',
-    url: 'https://physicsday.ru/olympiads',
-    siteName: 'ФизФест НГУ',
-    locale: 'ru_RU',
-    type: 'website',
-  },
-  
-  alternates: {
-    canonical: 'https://physicsday.ru/olympiads',
-  },
-}
+export const generateMetadata = () =>
+  buildMetadata("olympiads", {
+    title: "Олимпиады по физике для школьников 1-11 классов | ФизФест | НГУ Новосибирск",
+    description:
+      "Олимпиады по физике на ФизФест для школьников 1-11 классов. Соревнования, призы, дипломы.",
+  });
 
-export default function Olympiad() {
-    return (
-        <OlympiadPage />
-    )
+export default async function Olympiad() {
+  const content = await getSiteContent();
+  return <OlympiadPage content={content} />;
 }

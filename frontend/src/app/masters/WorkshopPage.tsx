@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Inter } from "next/font/google";
 import { motion } from "framer-motion";
 import { Calendar, CheckCircle, Clock, GraduationCap, MapPin, Users } from "lucide-react";
 import Header from "@/components/Header";
@@ -12,22 +11,12 @@ import { useModal } from "@/hooks/useModal";
 import { FlyingCats } from "@/components/animations/FlyingCats";
 import { SequentialFadeIn } from "@/components/animations/SequentialFadeIn";
 import { API_BASE_URL } from "@/lib/constants";
-import { useWorkshops } from "@/hooks/useWorkshops";
 import { apiService, getErrorMessage, WorkshopParticipantData } from "@/services/api";
 import { useRegistrationForm, validateWorkshopForm, WorkshopFormData } from "@/hooks/useRegistrationForm";
 import { Workshop } from "@/services/api";
-const inter = Inter({ subsets: ["latin"] });
+import { RegistrationClosed } from "@/components/RegistrationClosed";
+import { getRegistration, type SiteContent } from "@/lib/content";
 
-
-interface ParticipantData {
-  name: string;
-  email: string;
-  phone: string;
-  city: string;
-  school: string;
-  class_number: number;
-  workshop: number;
-}
 
 function getLimitText(x: number): string {
   if (x === 0) return 'Места закончились';
@@ -43,18 +32,12 @@ interface WorkshopCardProps {
   isSelected: boolean;
 }
 
-interface WorkshopCardProps {
-  workshop: Workshop;
-  onSelect: (workshopId: number) => void;
-  isSelected: boolean;
-  isMocked?: boolean;
-}
-
-const WorkshopCard = ({ workshop, onSelect, isSelected, isMocked = false }: WorkshopCardProps) => {
+const WorkshopCard = ({ workshop, onSelect, isSelected }: WorkshopCardProps) => {
   const isAvailable = workshop.limit_left > 0;
-  
-  // Construct full image URL
-  const imageUrl = workshop.image.startsWith('http') || isMocked
+
+  // Django отдаёт абсолютный URL картинки; относительный путь остаётся
+  // на случай, если API вызван без контекста запроса.
+  const imageUrl = workshop.image.startsWith('http')
     ? workshop.image
     : `${API_BASE_URL}/media/${workshop.image}`;
   
@@ -64,7 +47,7 @@ const WorkshopCard = ({ workshop, onSelect, isSelected, isMocked = false }: Work
       whileTap={isAvailable ? { scale: 0.98 } : {}}
       className={`relative rounded-2xl overflow-hidden shadow-lg cursor-pointer transition-all duration-300 ${
         isSelected ? 'ring-4 ring-[#344EAD] ring-opacity-50' : ''
-      } ${!isAvailable && !isMocked ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-xl'}`}
+      } ${!isAvailable ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-xl'}`}
       style={{ height: '300px' }}
       onClick={() => isAvailable && onSelect(workshop.id)}
     >
@@ -120,82 +103,29 @@ const initialFormData: WorkshopFormData = {
   selectedWorkshop: null
 };
 
-export default function WorkshopsPage() {
+interface WorkshopPageProps {
+  content: SiteContent;
+  initialWorkshops: Workshop[];
+}
+
+export default function WorkshopsPage({ content, initialWorkshops }: WorkshopPageProps) {
+  const { settings, socials } = content;
+  const registration = getRegistration(content, "workshops");
+
   const [selectedWorkshop, setSelectedWorkshop] = useState<number | null>(null);
   const [isOpen, modalContent, showModal, closeModal] = useModal();
-  
-  // Use workshops hook
-  // const { workshops, loading, error, refreshWorkshops } = useWorkshops();
 
-  // Mock workshops
-  const workshops: Workshop[] = [
-    {
-      id: 1,
-      name: 'Занимательная физика',
-      restriction: 'Дошкольники от 5 лет и 1-4 класс',
-      time: '12:45',
-      room: '315 ГК',
-      limit: 30,
-      limit_left: 0,
-      ordering: 1,
-      image: '/mocks/workshops/zanimatelnaya.jpg',
-    },
-    {
-      id: 2,
-      name: 'Аэродинамика',
-      restriction: '5-9 класс',
-      time: '12:45',
-      room: '321а ГК',
-      limit: 30,
-      limit_left: 0,
-      ordering: 2,
-      image: '/mocks/workshops/aero.jpg',
-    },
-    {
-      id: 3,
-      name: 'Магнитное поле',
-      restriction: '5-9 класс',
-      time: '10:45',
-      room: '321',
-      limit: 10,
-      limit_left: 0,
-      ordering: 3,
-      image: '/mocks/workshops/elmag.jpg',
-    },
-    {
-      id: 4,
-      name: 'Статическое электричество',
-      restriction: '5-9 класс',
-      time: '12:45',
-      room: '324',
-      limit: 10,
-      limit_left: 0,
-      ordering: 4,
-      image: '/mocks/workshops/static.jpg',
-    },
-    {
-      id: 5,
-      name: 'Радиоэлектроника',
-      restriction: '9-11 класс',
-      time: '12:45',
-      room: '348',
-      limit: 10,
-      limit_left: 0,
-      ordering: 5,
-      image: '/mocks/workshops/rel.jpg',
-    },
-    {
-      id: 6,
-      name: 'Занимательная физика',
-      restriction: 'Дошкольники от 5 лет и 1-4 класс',
-      time: '13:45',
-      room: '315 ГК',
-      limit: 30,
-      limit_left: 0,
-      ordering: 6,
-      image: '/mocks/workshops/zan.jpg',
-    },
-  ]
+  // Список приходит с сервера уже отрисованным; в браузере он нужен
+  // только чтобы обновить счётчик свободных мест после записи.
+  const [workshops, setWorkshops] = useState<Workshop[]>(initialWorkshops);
+
+  const refreshWorkshops = async () => {
+    try {
+      setWorkshops(await apiService.getWorkshops());
+    } catch (error) {
+      console.error('Не удалось обновить список мастер-классов:', error);
+    }
+  };
 
   const handleFormSubmit = async (data: WorkshopFormData) => {
     try {
@@ -218,8 +148,7 @@ export default function WorkshopsPage() {
         'Благодарим за регистрацию на мастер-класс 🎉'
       );
       
-      // Refresh workshops data to get updated limit_left
-      // await refreshWorkshops();
+      await refreshWorkshops();
       
       // Reset selected workshop
       setSelectedWorkshop(null);
@@ -236,8 +165,7 @@ export default function WorkshopsPage() {
           'Места закончились',
           'К сожалению, места на этот мастер-класс закончились.'
         );
-        // Refresh workshops to update limit_left
-        // await refreshWorkshops();
+        await refreshWorkshops();
       } else {
         showModal(
           'error',
@@ -294,47 +222,11 @@ export default function WorkshopsPage() {
     }
   };
 
-  // const selectedWorkshopData = workshops.find(w => w.id === selectedWorkshop);
-
-  // if (loading) {
-  //   return (
-  //     <main className="font-sans text-gray-900 scroll-smooth">
-  //       <Header />
-  //       <div className="min-h-screen flex items-center justify-center">
-  //         <div className="text-center">
-  //           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#344EAD] mx-auto"></div>
-  //           <p className="mt-4 text-gray-600">Загрузка мастер-классов...</p>
-  //         </div>
-  //       </div>
-  //       <Footer />
-  //     </main>
-  //   );
-  // }
-
-  // if (error) {
-  //   return (
-  //     <main className="font-sans text-gray-900 scroll-smooth">
-  //       <Header />
-  //       <div className="min-h-screen flex items-center justify-center">
-  //         <div className="text-center">
-  //           <p className="text-red-600 mb-4">{error}</p>
-  //           <button 
-  //             onClick={() => window.location.reload()} 
-  //             className="bg-[#344EAD] text-white px-6 py-2 rounded-xl hover:bg-[#2a3f92]"
-  //           >
-  //             Обновить страницу
-  //           </button>
-  //         </div>
-  //       </div>
-  //       <Footer />
-  //     </main>
-  //   );
-  // }
+  const selectedWorkshopData = workshops.find((w) => w.id === selectedWorkshop);
 
   return (
     <main className="font-sans text-gray-900 scroll-smooth">
-      {/* Header */}
-      <Header />
+      <Header settings={settings} socials={socials} />
 
       {/* Hero Section */}
       <section className="relative h-96 bg-[#344EAD] text-white flex items-center justify-center pt-20">
@@ -369,7 +261,6 @@ export default function WorkshopsPage() {
                     workshop={workshop}
                     onSelect={handleWorkshopSelect}
                     isSelected={selectedWorkshop === workshop.id}
-                    isMocked={true}
                   />
                 </SequentialFadeIn>
               ))}
@@ -379,136 +270,129 @@ export default function WorkshopsPage() {
       </section>
 
       {/* Registration Section */}
-      <section id="register" className="py-30 bg-white px-4">
-        <FadeInSection>
-          <h2 className="text-center text-3xl font-bold mb-12">Регистрация закрыта</h2>
-          <div className="max-w-xl mx-auto">
-            <p className="text-center text-gray-600 text-lg">
-              Регистрация на мастер-классы завершена.<br/>Следите за обновлениями на нашем сайте.
-            </p>
-          </div>
-        </FadeInSection>
-      </section>
-      {/* <section id="registration" className="py-8 bg-white px-4">
-        <FadeInSection>
-          <h2 className="text-center text-3xl font-bold mb-4">Регистрация на мастер-класс</h2>
-          <p className="text-center text-gray-600 mb-12 font-bold text-xl">(для школьников и дошкольников)</p>
+      {!registration.is_open ? (
+        <RegistrationClosed state={registration} />
+      ) : (
+          <section id="registration" className="py-8 bg-white px-4">
+          <FadeInSection>
+            <h2 className="text-center text-3xl font-bold mb-4">Регистрация на мастер-класс</h2>
+            <p className="text-center text-gray-600 mb-12 font-bold text-xl">(для школьников и дошкольников)</p>
           
-          {selectedWorkshopData && (
-            <div className="max-w-xl mx-auto mb-8 p-6 bg-[#344EAD] text-white rounded-xl">
-              <h3 className="text-xl font-semibold mb-2">Выбранный мастер-класс:</h3>
-              <p className="text-lg font-medium">{selectedWorkshopData.name}</p>
-              <div className="mt-3 space-y-1 text-sm">
-                <p className="flex items-center gap-2">
-                  <Calendar size={16} /> {selectedWorkshopData.time}
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin size={16} /> {selectedWorkshopData.room}
-                </p>
-                <p className="flex items-center gap-2">
-                  <GraduationCap size={16} /> {selectedWorkshopData.restriction.replace('<br/>', ' ')}
-                </p>
-                <p className="flex items-center gap-2">
-                  <Users size={16} /> {getLimitText(selectedWorkshopData.limit_left)}
-                </p>
+            {selectedWorkshopData && (
+              <div className="max-w-xl mx-auto mb-8 p-6 bg-[#344EAD] text-white rounded-xl">
+                <h3 className="text-xl font-semibold mb-2">Выбранный мастер-класс:</h3>
+                <p className="text-lg font-medium">{selectedWorkshopData.name}</p>
+                <div className="mt-3 space-y-1 text-sm">
+                  <p className="flex items-center gap-2">
+                    <Calendar size={16} /> {selectedWorkshopData.time}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <MapPin size={16} /> {selectedWorkshopData.room}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <GraduationCap size={16} /> {selectedWorkshopData.restriction.replace('<br/>', ' ')}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Users size={16} /> {getLimitText(selectedWorkshopData.limit_left)}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="max-w-xl mx-auto grid gap-6">
-            <input 
-              name="name"
-              className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
-              type="text" 
-              placeholder="ФИО" 
-              value={formData.name}
-              onChange={handleInputChange}
-              required 
-            />
-            <input 
-              name="email"
-              className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
-              type="email" 
-              placeholder="Email" 
-              value={formData.email}
-              onChange={handleInputChange}
-              required 
-            />
-            <input 
-              name="phone"
-              className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
-              type="text" 
-              placeholder="Телефон или ссылка на профиль ВК/Телеграм" 
-              value={formData.phone}
-              onChange={handleInputChange}
-              required 
-            />
-            <input 
-              name="city"
-              className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
-              type="text" 
-              placeholder="Город" 
-              value={formData.city}
-              onChange={handleInputChange}
-              required 
-            />
-            <input 
-              name="school"
-              className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
-              type="text" 
-              placeholder="Школа (если есть)" 
-              value={formData.school}
-              onChange={handleInputChange}
-            />
-            <select
-              name="class_number"
-              className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
-              value={formData.class_number}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="" disabled>Выберите класс</option>
-              <option value="preschool">Дошкольник</option>
-              {Array.from({ length: 11 }, (_, i) => i + 1).map(num => (
-                <option key={num} value={num.toString()}>{num}</option>
-              ))}
-            </select>
-
-            <label className="flex items-center space-x-3">
+            <div className="max-w-xl mx-auto grid gap-6">
               <input 
-                name="agreement"
-                type="checkbox" 
-                checked={formData.agreement}
+                name="name"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
+                type="text" 
+                placeholder="ФИО" 
+                value={formData.name}
                 onChange={handleInputChange}
-                className="w-5 h-5 text-[#344EAD] rounded focus:ring-[#344EAD]"
                 required 
               />
-              <span className="text-gray-700">Я даю свое согласие на обработку персональных данных</span>
-            </label>
+              <input 
+                name="email"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
+                type="email" 
+                placeholder="Email" 
+                value={formData.email}
+                onChange={handleInputChange}
+                required 
+              />
+              <input 
+                name="phone"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
+                type="text" 
+                placeholder="Телефон или ссылка на профиль ВК/Телеграм" 
+                value={formData.phone}
+                onChange={handleInputChange}
+                required 
+              />
+              <input 
+                name="city"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
+                type="text" 
+                placeholder="Город" 
+                value={formData.city}
+                onChange={handleInputChange}
+                required 
+              />
+              <input 
+                name="school"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent" 
+                type="text" 
+                placeholder="Школа (если есть)" 
+                value={formData.school}
+                onChange={handleInputChange}
+              />
+              <select
+                name="class_number"
+                className="border border-gray-300 p-3 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#344EAD] focus:border-transparent"
+                value={formData.class_number}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="" disabled>Выберите класс</option>
+                <option value="preschool">Дошкольник</option>
+                {Array.from({ length: 11 }, (_, i) => i + 1).map(num => (
+                  <option key={num} value={num.toString()}>{num}</option>
+                ))}
+              </select>
 
-            <button 
-              className={`py-3 rounded-xl font-semibold transition w-full ${
-                selectedWorkshop && !isSubmitting
-                  ? 'bg-[#344EAD] text-white hover:bg-[#2a3f92]'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              onClick={onSubmitClick}
-              disabled={!selectedWorkshop || isSubmitting}
-            >
-              {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
-            </button>
+              <label className="flex items-center space-x-3">
+                <input 
+                  name="agreement"
+                  type="checkbox" 
+                  checked={formData.agreement}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 text-[#344EAD] rounded focus:ring-[#344EAD]"
+                  required 
+                />
+                <span className="text-gray-700">{settings.consent_text}</span>
+              </label>
 
-            {!selectedWorkshop && (
-              <p className="text-sm text-red-600 text-center">
-                Сначала выберите мастер-класс из списка выше
-              </p>
-            )}
-          </div>
-        </FadeInSection>
-      </section> */}
+              <button 
+                className={`py-3 rounded-xl font-semibold transition w-full ${
+                  selectedWorkshop && !isSubmitting
+                    ? 'bg-[#344EAD] text-white hover:bg-[#2a3f92]'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                onClick={onSubmitClick}
+                disabled={!selectedWorkshop || isSubmitting}
+              >
+                {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
+              </button>
 
-      {/* Footer */}
-      <Footer />
+              {!selectedWorkshop && (
+                <p className="text-sm text-red-600 text-center">
+                  Сначала выберите мастер-класс из списка выше
+                </p>
+              )}
+            </div>
+          </FadeInSection>
+          </section>
+      )}
+
+      <Footer settings={settings} socials={socials} />
 
       {/* Modal */}
       <Modal 

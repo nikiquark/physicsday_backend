@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { FadeInSection } from "@/components/animations/FadeInSection";
 import { FlyingCats } from "@/components/animations/FlyingCats";
 import Link from "next/link";
 
-const inter = Inter({ subsets: ["latin"] });
 
 export default function Custom404() {
   return (

@@ -91,9 +91,11 @@ export interface Institute {
   name: string;
   limit: number;
   limit_left: number;
+  /** Готовая строка вида «3 октября, 11:00» — собирается на сервере. */
   time: string;
+  starts_at: string;
   image: string;
-  adress: string;
+  address: string;
   ordering: number;
 }
 

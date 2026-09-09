@@ -17,13 +17,9 @@ class InstituteSerializer(serializers.ModelSerializer):
     # Фронтенд показывает одну строку вида «3 октября, 11:00», поэтому
     # дата и время собираются здесь, а не в вёрстке.
     time = serializers.SerializerMethodField()
-    # Поле в модели переименовано adress -> address; на сайте пока
-    # остаётся прежнее имя, чтобы не ломать вёрстку карточек.
-    adress = serializers.CharField(source='address', read_only=True)
-
     class Meta:
         model = Institute
-        fields = ['id', 'name', 'limit', 'limit_left', 'time', 'starts_at', 'image', 'address', 'adress', 'ordering']
+        fields = ['id', 'name', 'limit', 'limit_left', 'time', 'starts_at', 'image', 'address', 'ordering']
 
     def get_time(self, obj):
         local = timezone.localtime(obj.starts_at)
