@@ -1,0 +1,64 @@
+# Продакшн-конфигурация.
+#
+# Наружу ничего не публикуется: порты слушают только на 127.0.0.1, а внешний
+# nginx (на хосте, не в docker) проксирует на них. Postgres не публикуется
+# вообще — он доступен только внутри docker-сети.
+#
+# Пример конфигурации nginx — в README, раздел «Развёртывание».
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ:-Asia/Novosibirsk}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      TZ: ${TZ:-Asia/Novosibirsk}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - media:/app/media
+      - static:/app/static
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: runtime
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api}
+    restart: unless-stopped
+    environment:
+      API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000/api}
+      SITE_URL: ${SITE_URL:-https://physicsday.ru}
+      TZ: ${TZ:-Asia/Novosibirsk}
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  pgdata:
+  media:
+  static:
