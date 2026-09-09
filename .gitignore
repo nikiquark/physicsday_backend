@@ -1,6 +1,28 @@
+# --- Python / Django ---
 venv/
-static/
-migrations/
-*.pyc
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/static/
+backend/staticfiles/
 db.sqlite3
+db.sqlite3-journal
+
+# --- Секреты и окружение ---
 .env
+.env.*
+!.env.example
+
+# --- Медиа ---
+# Файлы стартового каталога (seed) хранятся в git, всё загруженное
+# через админку живёт только в docker-томе и в репозиторий не попадает.
+backend/media/*
+!backend/media/seed/
+!backend/media/default_logo.jpg
+
+# --- Редакторы / ОС ---
+.idea/
+.vscode/
+.DS_Store
+*.swp
