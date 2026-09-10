@@ -270,9 +270,16 @@ docker compose -f docker-compose.dev.yml exec backend python manage.py makemigra
 
 ### Первый запуск
 
+Каталог может быть любым — важно лишь, чтобы nginx мог в него зайти
+(`/opt`, `/var/www` подходят; домашние каталоги обычно нет). Дальше по
+тексту путь подставляется из переменной, чтобы его не пришлось править
+в трёх местах:
+
 ```bash
-git clone git@github.com:nikiquark/physicsday_backend.git /opt/physicsday
-cd /opt/physicsday
+export PHYSICSDAY_DIR=/opt/physicsday     # подставьте свой путь
+
+git clone git@github.com:nikiquark/physicsday_backend.git "$PHYSICSDAY_DIR"
+cd "$PHYSICSDAY_DIR"
 
 cp .env.example .env
 # Заполните .env: DJANGO_SECRET_KEY, POSTGRES_PASSWORD, SITE_URL, домены.
@@ -318,7 +325,9 @@ server {
     }
 
     # Статика админки и загруженные картинки — с диска, мимо Django.
-    # Путь — каталог проекта; подставьте свой, если склонировали не в /opt.
+    #
+    # ПОДСТАВЬТЕ СВОЙ ПУТЬ. Ниже — пример для /opt/physicsday; узнать свой:
+    #   cd каталог-проекта && pwd
     #
     # Не указывайте сюда путь к тому docker (/var/lib/docker/volumes/...):
     # у этого каталога права drwx--x--- root:docker, nginx работает
@@ -368,7 +377,7 @@ server {
 Проверить, что nginx вообще может читать каталог:
 
 ```bash
-sudo -u www-data ls /opt/physicsday/backend/media/seed/program/ | head
+sudo -u www-data ls "$PHYSICSDAY_DIR/backend/media/seed/program/" | head
 ```
 
 Если тут `Permission denied`, дело не в nginx, а в правах на путь:
@@ -392,6 +401,7 @@ After=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/physicsday
+# ↑ подставьте свой путь
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
 
@@ -406,7 +416,7 @@ systemctl enable --now physicsday
 ## 2.4. Обновление
 
 ```bash
-cd /opt/physicsday
+cd "$PHYSICSDAY_DIR"
 git pull
 docker compose up -d --build
 docker compose exec backend python manage.py migrate
@@ -459,7 +469,7 @@ docker compose exec -T postgres pg_dump -U physicsday physicsday \
 копируются просто:
 
 ```bash
-tar czf /var/backups/physicsday-media-$(date +%F).tar.gz -C /opt/physicsday backend/media
+tar czf /var/backups/physicsday-media-$(date +%F).tar.gz -C "$PHYSICSDAY_DIR" backend/media
 ```
 
 ## 2.5. Cookie и согласие
@@ -589,8 +599,9 @@ cd frontend && npm test
 | Симптом                                   | Куда смотреть                                                                 |
 |-------------------------------------------|-------------------------------------------------------------------------------|
 | Админка без стилей                        | `docker compose logs backend` — прошёл ли `collectstatic`                      |
-| Картинки не грузятся, nginx отдаёт 403    | `location /media/` указывает в `/var/lib/docker/volumes/...` — туда nginx не пускают. Путь должен быть `/opt/physicsday/backend/media/`; либо просто уберите блок |
-| Картинки не грузятся, 404                 | Проверьте `alias` — путь должен заканчиваться слэшем — и что каталог не пуст   |
+| Картинки не грузятся, nginx отдаёт 403    | `location /media/` указывает в `/var/lib/docker/volumes/...` — туда nginx не пускают. Путь должен вести в каталог проекта (`<путь>/backend/media/`); либо просто уберите блок |
+| Картинки не грузятся, 404                 | Каталог `backend/media` в контейнере пуст. Проверьте, что в `docker-compose.yml` он смонтирован с хоста (`./backend/media:/app/media`), а не именованным томом: том создаётся пустым, картинок в образе нет |
+| Команда из README сделала не то            | Почти во всех примерах путь берётся из `PHYSICSDAY_DIR`. Задайте его под свой каталог (`export PHYSICSDAY_DIR=$(pwd)` из корня проекта) — иначе docker молча создаст пустой каталог по чужому пути |
 | Картинки не грузятся в разработке         | Протух кеш сборки Next: `docker compose -f docker-compose.dev.yml down && rm -rf frontend/.next && docker compose -f docker-compose.dev.yml up` |
 | `EACCES` или `Permission denied` в `frontend/.next` | Контейнер писал от root. Задайте `DOCKER_UID`/`DOCKER_GID` в `.env`, затем `sudo rm -rf frontend/.next` |
 | Сборка фронтенда встала, память под потолок | Серверу мало памяти. Проверки типов из сборки уже убраны; если встаёт и сама компиляция — добавьте своп: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
