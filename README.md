@@ -318,15 +318,18 @@ server {
     }
 
     # Статика админки и загруженные картинки — с диска, мимо Django.
-    # Пути к томам подставьте свои, их выводит
-    #   docker volume inspect physicsday_static physicsday_media
+    # Путь — каталог проекта; подставьте свой, если склонировали не в /opt.
+    #
+    # Не указывайте сюда путь к тому docker (/var/lib/docker/volumes/...):
+    # у этого каталога права drwx--x--- root:docker, nginx работает
+    # от www-data и получит на картинку 403.
     location /static/ {
-        alias /var/lib/docker/volumes/physicsday_static/_data/;
+        alias /opt/physicsday/backend/static/;
         expires 30d;
         access_log off;
     }
     location /media/ {
-        alias /var/lib/docker/volumes/physicsday_media/_data/;
+        alias /opt/physicsday/backend/media/;
         expires 7d;
         access_log off;
     }
@@ -356,9 +359,22 @@ server {
 }
 ```
 
-Блоки `/static/` и `/media/` не обязательны: Django отдаёт и то, и другое
-сам (статику через WhiteNoise). Через nginx быстрее, но если пути к томам
-не совпадут — просто уберите эти два блока, сайт продолжит работать.
+Блоки `/static/` и `/media/` не обязательны: без них запросы уходят
+в Next, оттуда перенаправляются в Django, и всё работает — просто
+медленнее. **Если получаете 403 на картинку — уберите эти два блока
+и перезагрузите nginx, сайт сразу заработает**, а с путями разберётесь
+отдельно.
+
+Проверить, что nginx вообще может читать каталог:
+
+```bash
+sudo -u www-data ls /opt/physicsday/backend/media/seed/program/ | head
+```
+
+Если тут `Permission denied`, дело не в nginx, а в правах на путь:
+каждый каталог от корня до `media` должен быть доступен на вход
+пользователю `www-data`. Домашние каталоги (`/root`, `/home/кто-то`)
+для этого обычно закрыты — отсюда и совет клонировать в `/opt`.
 
 ### Автозапуск после перезагрузки
 
@@ -438,6 +454,13 @@ docker compose exec -T postgres pg_dump -U physicsday physicsday \
 
 В базе лежат персональные данные несовершеннолетних — хранить дампы
 нужно соответственно.
+
+Загруженные картинки лежат в `backend/media/` обычным каталогом, так что
+копируются просто:
+
+```bash
+tar czf /var/backups/physicsday-media-$(date +%F).tar.gz -C /opt/physicsday backend/media
+```
 
 ## 2.5. Cookie и согласие
 
@@ -566,7 +589,8 @@ cd frontend && npm test
 | Симптом                                   | Куда смотреть                                                                 |
 |-------------------------------------------|-------------------------------------------------------------------------------|
 | Админка без стилей                        | `docker compose logs backend` — прошёл ли `collectstatic`                      |
-| Картинки не грузятся                      | `location /media/` в nginx указывает не туда — уберите блок, отдаст Django     |
+| Картинки не грузятся, nginx отдаёт 403    | `location /media/` указывает в `/var/lib/docker/volumes/...` — туда nginx не пускают. Путь должен быть `/opt/physicsday/backend/media/`; либо просто уберите блок |
+| Картинки не грузятся, 404                 | Проверьте `alias` — путь должен заканчиваться слэшем — и что каталог не пуст   |
 | Картинки не грузятся в разработке         | Протух кеш сборки Next: `docker compose -f docker-compose.dev.yml down && rm -rf frontend/.next && docker compose -f docker-compose.dev.yml up` |
 | `EACCES` или `Permission denied` в `frontend/.next` | Контейнер писал от root. Задайте `DOCKER_UID`/`DOCKER_GID` в `.env`, затем `sudo rm -rf frontend/.next` |
 | Сборка фронтенда встала, память под потолок | Серверу мало памяти. Проверки типов из сборки уже убраны; если встаёт и сама компиляция — добавьте своп: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |

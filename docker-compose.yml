@@ -40,8 +40,14 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - media:/app/media
-      - static:/app/static
+      # Обычные каталоги, а не именованные тома: nginx на хосте работает
+      # от www-data и не может зайти в /var/lib/docker/volumes — там
+      # права drwx--x--- root:docker, и на запрос картинки он отдаёт 403.
+      #
+      # backend/media уже содержит картинки стартового каталога из git;
+      # загруженное через админку ложится рядом и в git не попадает.
+      - ./backend/media:/app/media
+      - ./backend/static:/app/static
     ports:
       # Наружу — только на петлю: обращается к нему внешний nginx.
       # Порт хоста меняется через BACKEND_PORT в .env; порт внутри
@@ -66,5 +72,3 @@ services:
 
 volumes:
   pgdata:
-  media:
-  static:
