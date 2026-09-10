@@ -1,6 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
+from content.fields import RelativeFileField
 from content.models import RegistrationSection
 from content.registration import RegistrationWindowMixin, normalize_email, normalize_name
 
@@ -9,6 +10,7 @@ from .models import Participant, Workshop
 
 class WorkshopSerializer(serializers.ModelSerializer):
     time = serializers.TimeField(format="%H:%M")
+    image = RelativeFileField()
 
     class Meta:
         model = Workshop

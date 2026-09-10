@@ -4,6 +4,12 @@
 #
 # Исходники смонтированы с хоста: Django перезапускается сам (runserver),
 # Next обновляет страницу без пересборки (turbopack HMR).
+#
+# Контейнеры backend и frontend работают от имени хозяина каталога, иначе
+# они создают в рабочем дереве файлы от root, и потом ни npm run build,
+# ни rm -rf .next на хосте не проходят. Свои uid/gid покажет команда
+# `id -u; id -g`; если они не 1000, задайте DOCKER_UID и DOCKER_GID в .env.
+#
 # Порты открыты на всех интерфейсах, Postgres доступен снаружи на 5442
 # (не 5432: на машине разработчика обычно уже стоит свой PostgreSQL).
 # Порт переопределяется переменной POSTGRES_DEV_PORT.
@@ -33,6 +39,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     restart: unless-stopped
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     env_file:
       - path: .env
         required: false
@@ -59,6 +66,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     restart: unless-stopped
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api}
       API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000/api}

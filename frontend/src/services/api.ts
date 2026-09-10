@@ -1,5 +1,6 @@
 import { getCookie } from "@/lib/cookie";
 import { API_BASE_URL } from "@/lib/constants";
+import { toSitePath } from "@/lib/media";
 
 // Types
 export interface BaseParticipantData {
@@ -199,12 +200,14 @@ class ApiService {
 
   // Workshops
   async getWorkshops(): Promise<Workshop[]> {
-    return this.makeRequest<Workshop[]>('/workshops/');
+    const workshops = await this.makeRequest<Workshop[]>('/workshops/');
+    return workshops.map((w) => ({ ...w, image: toSitePath(w.image) }));
   }
 
   // Institutes
   async getInstitutes(): Promise<Institute[]> {
-    return this.makeRequest<Institute[]>('/excursions/');
+    const institutes = await this.makeRequest<Institute[]>('/excursions/');
+    return institutes.map((i) => ({ ...i, image: toSitePath(i.image) }));
   }
 }
 

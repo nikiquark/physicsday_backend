@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from .fields import RelativeFileField
 from .models import (
     OlympiadResult,
     PageSeo,
@@ -22,12 +23,16 @@ class RegistrationSectionSerializer(serializers.ModelSerializer):
 
 
 class ProgramItemSerializer(serializers.ModelSerializer):
+    image = RelativeFileField()
+
     class Meta:
         model = ProgramItem
         fields = ['id', 'title', 'image', 'href', 'ordering']
 
 
 class PartnerSerializer(serializers.ModelSerializer):
+    logo = RelativeFileField()
+
     class Meta:
         model = Partner
         fields = ['id', 'name', 'logo', 'website']

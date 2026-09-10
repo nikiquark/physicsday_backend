@@ -10,7 +10,6 @@ import { Modal } from "@/components/ui/Modal";
 import { useModal } from "@/hooks/useModal";
 import { FlyingCats } from "@/components/animations/FlyingCats";
 import { SequentialFadeIn } from "@/components/animations/SequentialFadeIn";
-import { API_BASE_URL } from "@/lib/constants";
 import { apiService, getErrorMessage, WorkshopParticipantData } from "@/services/api";
 import { useRegistrationForm, validateWorkshopForm, WorkshopFormData } from "@/hooks/useRegistrationForm";
 import { Workshop } from "@/services/api";
@@ -35,11 +34,8 @@ interface WorkshopCardProps {
 const WorkshopCard = ({ workshop, onSelect, isSelected }: WorkshopCardProps) => {
   const isAvailable = workshop.limit_left > 0;
 
-  // Django отдаёт абсолютный URL картинки; относительный путь остаётся
-  // на случай, если API вызван без контекста запроса.
-  const imageUrl = workshop.image.startsWith('http')
-    ? workshop.image
-    : `${API_BASE_URL}/media/${workshop.image}`;
+  // Django отдаёт путь от корня домена: /media/workshops_images/...
+  const imageUrl = workshop.image;
   
   return (
     <motion.div

@@ -2,6 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from content.fields import RelativeFileField
 from content.models import RegistrationSection
 from content.registration import RegistrationWindowMixin, normalize_email, normalize_name
 
@@ -17,6 +18,7 @@ class InstituteSerializer(serializers.ModelSerializer):
     # Фронтенд показывает одну строку вида «3 октября, 11:00», поэтому
     # дата и время собираются здесь, а не в вёрстке.
     time = serializers.SerializerMethodField()
+    image = RelativeFileField()
     class Meta:
         model = Institute
         fields = ['id', 'name', 'limit', 'limit_left', 'time', 'starts_at', 'image', 'address', 'ordering']

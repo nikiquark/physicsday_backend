@@ -8,6 +8,8 @@
  * лучше слегка устаревшая дата, чем пустая главная.
  */
 
+import { toSitePath } from "./media";
+
 export interface RegistrationState {
   slug: string;
   status: "before" | "open" | "after";
@@ -151,7 +153,19 @@ async function fetchJson<T>(path: string): Promise<T | null> {
 
 export async function getSiteContent(): Promise<SiteContent> {
   const content = await fetchJson<SiteContent>("/content/");
-  return content ?? FALLBACK_CONTENT;
+  if (!content) return FALLBACK_CONTENT;
+
+  return {
+    ...content,
+    program: (content.program ?? []).map((item) => ({
+      ...item,
+      image: toSitePath(item.image),
+    })),
+    partners: (content.partners ?? []).map((partner) => ({
+      ...partner,
+      logo: toSitePath(partner.logo),
+    })),
+  };
 }
 
 export function getRegistration(

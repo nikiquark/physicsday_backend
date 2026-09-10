@@ -7,6 +7,7 @@
  */
 
 import { REVALIDATE_SECONDS } from "./content";
+import { toSitePath } from "./media";
 import type { Institute, Workshop } from "@/services/api";
 
 const INTERNAL_API =
@@ -28,5 +29,12 @@ async function fetchList<T>(path: string): Promise<T[]> {
   }
 }
 
-export const getWorkshops = () => fetchList<Workshop>("/workshops/");
-export const getInstitutes = () => fetchList<Institute>("/excursions/");
+export async function getWorkshops(): Promise<Workshop[]> {
+  const workshops = await fetchList<Workshop>("/workshops/");
+  return workshops.map((w) => ({ ...w, image: toSitePath(w.image) }));
+}
+
+export async function getInstitutes(): Promise<Institute[]> {
+  const institutes = await fetchList<Institute>("/excursions/");
+  return institutes.map((i) => ({ ...i, image: toSitePath(i.image) }));
+}

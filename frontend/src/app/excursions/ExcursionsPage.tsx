@@ -10,7 +10,6 @@ import { Modal } from "@/components/ui/Modal";
 import { useModal } from "@/hooks/useModal";
 import { FlyingCats } from "@/components/animations/FlyingCats";
 import { SequentialFadeIn } from "@/components/animations/SequentialFadeIn";
-import { API_BASE_URL } from "@/lib/constants";
 import { apiService, getErrorMessage, ExcursionParticipantData } from "@/services/api";
 import { useRegistrationForm, validateExcursionForm, ExcursionFormData } from "@/hooks/useRegistrationForm";
 import type { Institute } from "@/services/api";
@@ -34,11 +33,8 @@ interface InstituteCardProps {
 const InstituteCard = ({ institute, onSelect, isSelected }: InstituteCardProps) => {
   const isAvailable = institute.limit_left > 0;
 
-  // Django отдаёт абсолютный URL картинки; относительный путь остаётся
-  // на случай, если API вызван без контекста запроса.
-  const imageUrl = institute.image.startsWith('http')
-    ? institute.image
-    : `${API_BASE_URL}/media/${institute.image}`;
+  // Django отдаёт путь от корня домена: /media/institutes_images/...
+  const imageUrl = institute.image;
   
   return (
     <motion.div
