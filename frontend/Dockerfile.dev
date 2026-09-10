@@ -5,7 +5,10 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# Кеш npm живёт вне слоя: правка package.json не заставляет качать
+# все пакеты заново.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Исходники в dev монтируются томом, в образ не копируются.
 EXPOSE 3000

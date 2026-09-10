@@ -4,7 +4,10 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Кеш npm живёт вне слоя: правка package.json не заставляет качать
+# все пакеты заново.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # ---------- Сборка ----------
 FROM node:22-alpine AS build
