@@ -1,5 +1,6 @@
 import { FALLBACK_CONTENT, type SiteSettings, type SocialLink } from "@/lib/content";
 import { VkIcon } from "./VkIcon";
+import { CookieSettingsLink } from "./ui/CookieSettingsLink";
 
 interface FooterProps {
   // Контакты и соцсети правятся в админке. Значения по умолчанию нужны
@@ -33,6 +34,9 @@ export default function Footer({
                 >
                   Nikita Okhotnikov
                 </a>
+              </p>
+              <p className="text-xs text-white/70 mt-1">
+                <CookieSettingsLink />
               </p>
             </div>
           </div>
@@ -71,6 +75,9 @@ export default function Footer({
             >
               Nikita Okhotnikov
             </a>
+          </p>
+          <p className="text-xs text-white/70 mt-1">
+            <CookieSettingsLink />
           </p>
         </div>
       </div>
