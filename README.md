@@ -278,6 +278,13 @@ docker compose exec backend python manage.py createsuperuser
 Наружу ничего не публикуется: `backend` слушает `127.0.0.1:8000`,
 `frontend` — `127.0.0.1:3000`, Postgres не публикуется вовсе.
 
+Если эти порты на сервере заняты, поменяйте `BACKEND_PORT` и
+`FRONTEND_PORT` в `.env` — и не забудьте поправить `proxy_pass`
+в конфигурации nginx ниже. Адрес привязки менять нельзя: `127.0.0.1`
+зашит намеренно, чтобы контейнеры не оказались доступны из интернета
+в обход nginx. Порты **внутри** контейнеров остаются 8000 и 3000 —
+на них ссылается `API_URL_INTERNAL`, трогать их не нужно.
+
 ### nginx
 
 ```nginx
@@ -290,7 +297,8 @@ server {
 
     client_max_body_size 20M;   # загрузка картинок через админку
 
-    # Django: API и админка
+    # Django: API и админка.
+    # Порт должен совпадать с BACKEND_PORT из .env.
     location ~ ^/(api|admin)/ {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host              $host;
@@ -313,7 +321,7 @@ server {
         access_log off;
     }
 
-    # Сам сайт
+    # Сам сайт. Порт должен совпадать с FRONTEND_PORT из .env.
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_set_header Host              $host;
@@ -527,7 +535,8 @@ cd frontend && npm test
   поменять его на работающем контейнере нельзя, нужен
   `docker compose up -d --build frontend`.
 - **`API_URL_INTERNAL`** — адрес API *из контейнера frontend*
-  (`http://backend:8000/api`), мимо nginx и мимо интернета.
+  (`http://backend:8000/api`), мимо nginx и мимо интернета. Порт здесь
+  внутренний, с `BACKEND_PORT` он не связан и меняться не должен.
 
 ## 2.7. Если что-то не работает
 
@@ -542,4 +551,4 @@ cd frontend && npm test
 | Форма отправляется, но приходит 403       | CSRF: проверьте `SITE_URL` и что nginx передаёт `X-Forwarded-Proto`            |
 | «Регистрация закрыта», хотя должна идти   | Админка → «Регистрация: разделы» → колонка «Сейчас» и галочка «Закрыть принудительно» |
 | Время закрытия не совпадает с объявленным | `TIME_ZONE` должен быть `Asia/Novosibirsk`, `TZ` в `.env` — тот же             |
-| `address already in use` при `up`         | Порт занят другой программой. Для Postgres — задайте `POSTGRES_DEV_PORT`; какой порт кем занят, покажет `ss -ltnp \| grep :5442` |
+| `address already in use` при `up`         | Порт занят другой программой. На проде задайте `BACKEND_PORT` / `FRONTEND_PORT`, для Postgres в разработке — `POSTGRES_DEV_PORT`; какой порт кем занят, покажет `ss -ltnp \| grep :5442` |

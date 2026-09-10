@@ -4,6 +4,9 @@
 # nginx (на хосте, не в docker) проксирует на них. Postgres не публикуется
 # вообще — он доступен только внутри docker-сети.
 #
+# Порты хоста задаются в .env (BACKEND_PORT, FRONTEND_PORT). Если меняете
+# их, поправьте и proxy_pass в конфигурации nginx.
+#
 # Пример конфигурации nginx — в README, раздел «Развёртывание».
 
 services:
@@ -40,7 +43,10 @@ services:
       - media:/app/media
       - static:/app/static
     ports:
-      - "127.0.0.1:8000:8000"
+      # Наружу — только на петлю: обращается к нему внешний nginx.
+      # Порт хоста меняется через BACKEND_PORT в .env; порт внутри
+      # контейнера остаётся 8000, на него ссылается API_URL_INTERNAL.
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
 
   frontend:
     build:
@@ -56,7 +62,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
 
 volumes:
   pgdata:
