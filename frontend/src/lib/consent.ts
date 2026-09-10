@@ -1,10 +1,15 @@
 /**
  * Согласие на использование cookie.
  *
- * Решение посетителя хранится в localStorage и применяется на каждой
- * загрузке страницы, а не только в момент нажатия кнопки. При отказе
- * все необязательные cookie удаляются — в том числе те, что мог
- * поставить сторонний скрипт, добавленный позже.
+ * Решение применяется на каждой загрузке страницы, а не только в момент
+ * нажатия кнопки. При отказе все необязательные cookie удаляются —
+ * в том числе те, что мог поставить сторонний скрипт, добавленный позже.
+ *
+ * Согласие и отказ хранятся по-разному:
+ *   - согласие — в localStorage, надолго: спрашивать повторно незачем;
+ *   - отказ — в sessionStorage, до закрытия вкладки. На следующий заход
+ *     баннер спросит снова, но внутри одного визита обновление страницы
+ *     решение не сбрасывает.
  *
  * Сам сайт необязательных cookie не ставит: csrftoken выдаётся только
  * на странице входа в админку, sessionid — только после входа.
@@ -31,7 +36,7 @@ const LEGACY_STORAGE_KEY = "cookiesAccepted";
  */
 const ESSENTIAL_COOKIES = ["csrftoken", "sessionid"];
 
-/** Ключи localStorage, которые переживают отказ. */
+/** Ключи localStorage, которые переживают чистку при отказе. */
 const ESSENTIAL_STORAGE_KEYS = [STORAGE_KEY, LEGACY_STORAGE_KEY];
 
 function safeLocalStorage(): Storage | null {
@@ -44,29 +49,58 @@ function safeLocalStorage(): Storage | null {
   }
 }
 
+function safeSessionStorage(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 /** Что выбрал посетитель, или null — если ещё не выбирал. */
 export function readConsent(): ConsentChoice | null {
   if (typeof window === "undefined") return null;
 
+  // Отказ действует до конца визита.
+  if (safeSessionStorage()?.getItem(STORAGE_KEY) === "declined") return "declined";
+
   const storage = safeLocalStorage();
   if (!storage) return null;
 
-  const stored = storage.getItem(STORAGE_KEY);
-  if (stored === "accepted" || stored === "declined") return stored;
+  if (storage.getItem(STORAGE_KEY) === "accepted") return "accepted";
 
-  // Посетители, ответившие в старой версии баннера, не спрашиваются заново.
+  // Ответы из первой версии баннера. Согласие принимаем как есть,
+  // отказ переносим в сессию: долго его больше не храним.
   const legacy = storage.getItem(LEGACY_STORAGE_KEY);
   if (legacy === "true") return "accepted";
-  if (legacy === "false") return "declined";
+  if (legacy === "false") {
+    try {
+      storage.removeItem(LEGACY_STORAGE_KEY);
+      safeSessionStorage()?.setItem(STORAGE_KEY, "declined");
+    } catch {
+      // Ничего страшного: баннер спросит снова.
+    }
+    return "declined";
+  }
 
   return null;
 }
 
 export function saveConsent(choice: ConsentChoice): void {
-  const storage = safeLocalStorage();
   try {
-    storage?.setItem(STORAGE_KEY, choice);
-    storage?.removeItem(LEGACY_STORAGE_KEY);
+    const local = safeLocalStorage();
+    const session = safeSessionStorage();
+
+    if (choice === "accepted") {
+      local?.setItem(STORAGE_KEY, choice);
+      session?.removeItem(STORAGE_KEY);
+    } else {
+      // Отказ намеренно не попадает в localStorage: на следующий заход
+      // баннер спросит снова.
+      local?.removeItem(STORAGE_KEY);
+      session?.setItem(STORAGE_KEY, choice);
+    }
+    local?.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     // Хранить решение негде — баннер появится снова. Это лучше, чем
     // молча считать, что согласие получено.
@@ -123,7 +157,8 @@ export function clearNonEssentialCookies(): void {
   }
 }
 
-/** Очищает localStorage от всего, кроме самого решения о cookie. */
+/** Очищает localStorage от всего, кроме служебных ключей согласия.
+ *  sessionStorage не трогается: там лежит сам отказ. */
 function clearNonEssentialStorage(): void {
   const storage = safeLocalStorage();
   if (!storage) return;
