@@ -237,11 +237,21 @@ docker compose -f docker-compose.dev.yml exec backend python manage.py createsup
 обновляет страницу без пересборки. `.env` для разработки не обязателен —
 у всех переменных есть значения по умолчанию.
 
-### Тесты
+### Тесты и проверки
 
 ```bash
+# бэкенд
 docker compose -f docker-compose.dev.yml exec backend python manage.py test
+
+# фронтенд: типы и ESLint
+cd frontend && npm run check
+
+# фронтенд: логика согласия на cookie и адресов файлов
+cd frontend && npm test
 ```
+
+`npm run check` обязателен перед выкладкой: `next build` внутри образа
+типы больше не проверяет.
 
 Покрыты нормализация ФИО, окна регистрации, правило «один мастер-класс
 и одна экскурсия», лимиты мест и отсечение заявок после дедлайна.
@@ -385,6 +395,19 @@ git pull
 docker compose up -d --build
 docker compose exec backend python manage.py migrate
 ```
+
+> **Перед выкладкой прогоните проверки — сборка образа их не делает:**
+>
+> ```bash
+> cd frontend && npm run check && npm test
+> cd ../backend && python manage.py test
+> ```
+>
+> Проверка типов и ESLint вынесены из `next build` намеренно: они
+> запускают отдельные процессы-воркеры и на сервере с 2 ГБ памяти
+> вставали намертво, хотя сама компиляция занимает 16 секунд.
+> Ошибка типов теперь не остановит сборку образа — её поймает
+> только `npm run check`.
 
 Миграции применяются **вручную**. В entrypoint их намеренно нет:
 автомиграции на старте однажды ломают прод в самый неудачный момент.
@@ -546,6 +569,7 @@ cd frontend && npm test
 | Картинки не грузятся                      | `location /media/` в nginx указывает не туда — уберите блок, отдаст Django     |
 | Картинки не грузятся в разработке         | Протух кеш сборки Next: `docker compose -f docker-compose.dev.yml down && rm -rf frontend/.next && docker compose -f docker-compose.dev.yml up` |
 | `EACCES` или `Permission denied` в `frontend/.next` | Контейнер писал от root. Задайте `DOCKER_UID`/`DOCKER_GID` в `.env`, затем `sudo rm -rf frontend/.next` |
+| Сборка фронтенда встала, память под потолок | Серверу мало памяти. Проверки типов из сборки уже убраны; если встаёт и сама компиляция — добавьте своп: `fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile` |
 | Сайт показывает старую дату               | ISR-кеш, подождите минуту; если не помогло — `docker compose restart frontend` |
 | Сайт показывает дату из `content.ts`      | Фронтенд не достучался до Django: проверьте `API_URL_INTERNAL` и `ALLOWED_HOSTS` |
 | Форма отправляется, но приходит 403       | CSRF: проверьте `SITE_URL` и что nginx передаёт `X-Forwarded-Proto`            |
