@@ -186,20 +186,22 @@ export function formatEventDate(isoDate: string): string {
   return `${day} ${months[month - 1]} ${year}`;
 }
 
-/** «14 сентября» — без года и времени, в новосибирской таймзоне. */
-function formatDayMonth(iso: string): string {
+/** {day: "14", month: "сентября"} — без года и времени, в новосибирской таймзоне. */
+function getDayMonth(iso: string): { day: string; month: string } {
   const parts = new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
     month: "long",
     timeZone: "Asia/Novosibirsk",
   }).formatToParts(new Date(iso));
-  const day = parts.find((p) => p.type === "day")?.value ?? "";
-  const month = parts.find((p) => p.type === "month")?.value ?? "";
-  return `${day} ${month}`;
+  return {
+    day: parts.find((p) => p.type === "day")?.value ?? "",
+    month: parts.find((p) => p.type === "month")?.value ?? "",
+  };
 }
 
 /**
  * Баннер с окном регистрации: «Регистрация открыта с 14 по 25 сентября».
+ * В пределах одного месяца название месяца у даты открытия не дублируется.
  *
  * Время глагола зависит от статуса раздела, чтобы текст не врал
  * до открытия и после закрытия. Показывается независимо от статуса —
@@ -211,15 +213,17 @@ export function formatRegistrationWindow(registration: RegistrationState): strin
     registration.status === "after" ? "была открыта" :
     "открыта";
 
-  const opens = registration.opens_at ? formatDayMonth(registration.opens_at) : null;
-  const closes = registration.closes_at ? formatDayMonth(registration.closes_at) : null;
+  const opens = registration.opens_at ? getDayMonth(registration.opens_at) : null;
+  const closes = registration.closes_at ? getDayMonth(registration.closes_at) : null;
 
   if (opens && closes) {
-    return opens === closes
-      ? `Регистрация ${verb} до ${closes}`
-      : `Регистрация ${verb} с ${opens} по ${closes}`;
+    if (opens.day === closes.day && opens.month === closes.month) {
+      return `Регистрация ${verb} до ${closes.day} ${closes.month}`;
+    }
+    const opensText = opens.month === closes.month ? opens.day : `${opens.day} ${opens.month}`;
+    return `Регистрация ${verb} с ${opensText} по ${closes.day} ${closes.month}`;
   }
-  if (closes) return `Регистрация ${verb} до ${closes}`;
-  if (opens) return `Регистрация ${verb} с ${opens}`;
+  if (closes) return `Регистрация ${verb} до ${closes.day} ${closes.month}`;
+  if (opens) return `Регистрация ${verb} с ${opens.day} ${opens.month}`;
   return `Регистрация ${verb}`;
 }
