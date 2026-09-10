@@ -185,3 +185,41 @@ export function formatEventDate(isoDate: string): string {
   if (!year || !month || !day) return isoDate;
   return `${day} ${months[month - 1]} ${year}`;
 }
+
+/** «14 сентября» — без года и времени, в новосибирской таймзоне. */
+function formatDayMonth(iso: string): string {
+  const parts = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Novosibirsk",
+  }).formatToParts(new Date(iso));
+  const day = parts.find((p) => p.type === "day")?.value ?? "";
+  const month = parts.find((p) => p.type === "month")?.value ?? "";
+  return `${day} ${month}`;
+}
+
+/**
+ * Баннер с окном регистрации: «Регистрация открыта с 14 по 25 сентября».
+ *
+ * Время глагола зависит от статуса раздела, чтобы текст не врал
+ * до открытия и после закрытия. Показывается независимо от статуса —
+ * подробности до/после уже даёт RegistrationClosed.
+ */
+export function formatRegistrationWindow(registration: RegistrationState): string {
+  const verb =
+    registration.status === "before" ? "будет открыта" :
+    registration.status === "after" ? "была открыта" :
+    "открыта";
+
+  const opens = registration.opens_at ? formatDayMonth(registration.opens_at) : null;
+  const closes = registration.closes_at ? formatDayMonth(registration.closes_at) : null;
+
+  if (opens && closes) {
+    return opens === closes
+      ? `Регистрация ${verb} до ${closes}`
+      : `Регистрация ${verb} с ${opens} по ${closes}`;
+  }
+  if (closes) return `Регистрация ${verb} до ${closes}`;
+  if (opens) return `Регистрация ${verb} с ${opens}`;
+  return `Регистрация ${verb}`;
+}

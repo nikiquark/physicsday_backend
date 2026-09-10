@@ -35,6 +35,20 @@ const initialFormData: StudentFormData = {
   agreement: false
 };
 
+/** «до 10:00 7 октября 2026», новосибирское время. */
+function formatDeadline(iso: string): string {
+  const parts = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Novosibirsk",
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `до ${get("hour")}:${get("minute")} ${get("day")} ${get("month")} ${get("year")}`;
+}
+
 const BenefitCard = ({ icon: Icon, title, description }: {
   icon: LucideIcon;
   title: string;
@@ -68,13 +82,7 @@ export default function OlympiadPage({ content }: { content: SiteContent }) {
   // Дедлайн приёма заявок берётся из окна регистрации, чтобы дата
   // в шапке и фактическое закрытие приёма не разъезжались.
   const registrationDeadline = registration.closes_at
-    ? `до ${new Date(registration.closes_at).toLocaleString("ru-RU", {
-        day: "numeric",
-        month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Asia/Novosibirsk",
-      })}`
+    ? formatDeadline(registration.closes_at)
     : "открыта";
 
   const handleFormSubmit = async (data: StudentFormData) => {

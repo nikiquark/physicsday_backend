@@ -9,7 +9,8 @@ from . import models
 
 @admin.register(models.Workshop)
 class WorkshopAdmin(admin.ModelAdmin):
-    list_display = ("name", "time", "room", "limit")
+    list_display = ("name", "time", "room", "limit", "ordering")
+    list_editable = ("ordering",)
     ordering = ("ordering", "name", "time")
     
 class ParticipantResource(resources.ModelResource):

@@ -14,7 +14,7 @@ import { apiService, getErrorMessage, ExcursionParticipantData } from "@/service
 import { useRegistrationForm, validateExcursionForm, ExcursionFormData } from "@/hooks/useRegistrationForm";
 import type { Institute } from "@/services/api";
 import { RegistrationClosed } from "@/components/RegistrationClosed";
-import { getRegistration, type SiteContent } from "@/lib/content";
+import { formatRegistrationWindow, getRegistration, type SiteContent } from "@/lib/content";
 
 function getLimitText(x: number): string {
   if (x === 0) return 'Места закончились';
@@ -252,6 +252,9 @@ export default function ExcursionPage({ content, initialInstitutes }: Excursions
       <section className="py-8 bg-gray-50">
         <FadeInSection>
           <h2 className="text-center text-3xl font-bold mb-4">Доступные экскурсии</h2>
+          <p className="text-center text-[#344EAD] font-bold text-lg mb-4">
+            {formatRegistrationWindow(registration)}
+          </p>
           <p className="text-center text-gray-600 font-bold mb-12 max-w-4xl mx-auto px-4">
             Выберите <span className="underline font-extrabold">один</span> интересующий вас институт для экскурсии.
           </p>

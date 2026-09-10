@@ -43,6 +43,11 @@ export default function HomePage({ content }: { content: SiteContent }) {
   const { settings, program, partners } = content;
   const registration = getRegistration(content, "physicsday");
 
+  // На мобильном «Главный корпус НГУ (Пирогова, 2)» не помещается в одну
+  // строку — если формат админки «Название (Адрес)», разбиваем на две
+  // строки без скобок; на sm+ показываем как есть, одной строкой.
+  const eventPlaceMatch = settings.event_place.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+
   const [role, setRole] = useState<UserRole>("Школьник");
   const [isOpen, modalContent, showModal, closeModal] = useModal();
 
@@ -140,7 +145,18 @@ export default function HomePage({ content }: { content: SiteContent }) {
             {settings.event_time}
           </h1>
           <p className="text-xl sm:text-2xl md:text-4xl mb-4 font-medium">
-            {settings.event_place}
+            {eventPlaceMatch ? (
+              <>
+                <span className="sm:hidden">
+                  {eventPlaceMatch[1]}
+                  <br />
+                  {eventPlaceMatch[2]}
+                </span>
+                <span className="hidden sm:inline">{settings.event_place}</span>
+              </>
+            ) : (
+              settings.event_place
+            )}
           </p>
           <p className="text-base sm:text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
             {settings.event_description}

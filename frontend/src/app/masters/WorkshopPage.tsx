@@ -14,7 +14,7 @@ import { apiService, getErrorMessage, WorkshopParticipantData } from "@/services
 import { useRegistrationForm, validateWorkshopForm, WorkshopFormData } from "@/hooks/useRegistrationForm";
 import { Workshop } from "@/services/api";
 import { RegistrationClosed } from "@/components/RegistrationClosed";
-import { getRegistration, type SiteContent } from "@/lib/content";
+import { formatRegistrationWindow, getRegistration, type SiteContent } from "@/lib/content";
 
 
 function getLimitText(x: number): string {
@@ -240,6 +240,9 @@ export default function WorkshopsPage({ content, initialWorkshops }: WorkshopPag
       {/* Workshops Section */}
       <section className="py-30  bg-gray-50">
         <h2 className="text-center text-3xl font-bold mb-4">Доступные мастер&#x2011;классы</h2>
+        <p className="text-center text-[#344EAD] font-bold text-lg mb-4">
+          {formatRegistrationWindow(registration)}
+        </p>
         <p className="text-center text-gray-600 font-bold mb-12 max-w-4xl mx-auto px-4">
           Выберите <span className="underline font-extrabold">один</span> интересующий вас мастер&#x2011;класс, кликнув по карточке, и пройдите регистрацию.
         </p>
