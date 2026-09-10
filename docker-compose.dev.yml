@@ -4,7 +4,9 @@
 #
 # Исходники смонтированы с хоста: Django перезапускается сам (runserver),
 # Next обновляет страницу без пересборки (turbopack HMR).
-# Порты открыты на всех интерфейсах, Postgres доступен снаружи на 5432.
+# Порты открыты на всех интерфейсах, Postgres доступен снаружи на 5442
+# (не 5432: на машине разработчика обычно уже стоит свой PostgreSQL).
+# Порт переопределяется переменной POSTGRES_DEV_PORT.
 
 services:
   postgres:
@@ -18,7 +20,8 @@ services:
     volumes:
       - pgdata_dev:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Системный PostgreSQL занимает 5432, поэтому наружу выносим 5442.
+      - "${POSTGRES_DEV_PORT:-5442}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-physicsday}"]
       interval: 5s

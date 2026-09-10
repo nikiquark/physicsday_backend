@@ -208,7 +208,7 @@ docker compose -f docker-compose.dev.yml exec backend python manage.py createsup
 - сайт — http://localhost:3000
 - админка — http://localhost:8000/admin/
 - API — http://localhost:8000/api/content/
-- Postgres — `localhost:5432`, база/пользователь/пароль по умолчанию `physicsday`
+- Postgres — `localhost:5442`, база/пользователь/пароль по умолчанию `physicsday`
 
 Исходники смонтированы с хоста: Django перезапускается сам, Next
 обновляет страницу без пересборки. `.env` для разработки не обязателен —
@@ -410,3 +410,4 @@ docker compose exec -T postgres pg_dump -U physicsday physicsday \
 | Форма отправляется, но приходит 403       | CSRF: проверьте `SITE_URL` и что nginx передаёт `X-Forwarded-Proto`            |
 | «Регистрация закрыта», хотя должна идти   | Админка → «Регистрация: разделы» → колонка «Сейчас» и галочка «Закрыть принудительно» |
 | Время закрытия не совпадает с объявленным | `TIME_ZONE` должен быть `Asia/Novosibirsk`, `TZ` в `.env` — тот же             |
+| `address already in use` при `up`         | Порт занят другой программой. Для Postgres — задайте `POSTGRES_DEV_PORT`; какой порт кем занят, покажет `ss -ltnp \| grep :5442` |
