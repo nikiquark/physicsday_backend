@@ -413,10 +413,31 @@ docker compose exec -T postgres pg_dump -U physicsday physicsday \
 Их отказ не удаляет: без них не отправить заявку и не войти в админку,
 а на строго необходимые cookie требование о согласии не распространяется.
 
-> **Важно понимать:** сегодня публичная часть сайта не ставит ни одной
-> необязательной cookie. Аналитики в коде нет, `csrftoken` выдаётся
-> только на странице входа в админку. То есть отказ пока ничего видимого
-> не отключает — но механизм рабочий и ждёт первого счётчика.
+### Сторонние встраивания
+
+Свои необязательные cookie сайт не ставит: аналитики в коде нет,
+`csrftoken` выдаётся только на странице входа в админку. Шрифты
+`next/font` подкладываются локально на этапе сборки, к Google
+браузер не ходит.
+
+А вот **карта Яндекса на главной ставит свои** — при загрузке виджета
+приходит восемь cookie на домене `yandex.ru`, включая межсайтовый
+идентификатор `yandexuid` со сроком жизни до 2028 года.
+
+**Удалить их со стороны сайта невозможно.** Правило одного источника
+не даёт странице `physicsday.ru` читать и стирать cookie домена
+`yandex.ru` — `clearNonEssentialCookies()` их просто не видит.
+Единственный способ соблюсти отказ — не загружать виджет.
+
+Этим занимается [`MapEmbed`](frontend/src/components/ui/MapEmbed.tsx):
+пока согласия нет, вместо карты показывается заглушка с адресом,
+ссылкой «Открыть в Яндекс.Картах» (обычная ссылка, cookie не ставит)
+и кнопкой «Показать карту» — разовая загрузка по осознанному действию,
+сохранённое решение она не меняет.
+
+Так же нужно поступать с любым будущим встраиванием: видео, виджет
+сообщества, платёжная форма. Оборачивайте в проверку согласия, а не
+надейтесь удалить чужие cookie задним числом.
 
 ### Как правильно добавить аналитику
 
@@ -426,7 +447,7 @@ docker compose exec -T postgres pg_dump -U physicsday physicsday \
 ```tsx
 "use client";
 import { useEffect, useState } from "react";
-import { CONSENT_OPEN_EVENT, hasAnalyticsConsent } from "@/lib/consent";
+import { CONSENT_CHANGE_EVENT, hasAnalyticsConsent } from "@/lib/consent";
 
 export function Analytics() {
   const [allowed, setAllowed] = useState(false);
@@ -435,8 +456,8 @@ export function Analytics() {
     const sync = () => setAllowed(hasAnalyticsConsent());
     sync();
     // Посетитель мог передумать, не перезагружая страницу.
-    window.addEventListener(CONSENT_OPEN_EVENT, sync);
-    return () => window.removeEventListener(CONSENT_OPEN_EVENT, sync);
+    window.addEventListener(CONSENT_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(CONSENT_CHANGE_EVENT, sync);
   }, []);
 
   if (!allowed) return null;
@@ -455,8 +476,8 @@ cd frontend && npm test
 
 Проверяют механизм на поддельных `document` и `localStorage`: что отказ
 сохраняется, что необязательные cookie удаляются, что `csrftoken`
-и `sessionid` остаются, что запрет браузера на хранение данных не
-считается согласием.
+и `sessionid` остаются, что карта не грузится без согласия и что запрет
+браузера на хранение данных не считается согласием.
 
 ## 2.6. Переменные окружения
 

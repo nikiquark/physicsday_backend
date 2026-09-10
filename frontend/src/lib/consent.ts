@@ -6,11 +6,14 @@
  * все необязательные cookie удаляются — в том числе те, что мог
  * поставить сторонний скрипт, добавленный позже.
  *
- * Сейчас публичная часть сайта не ставит ни одной необязательной cookie:
- * csrftoken выдаётся только на странице входа в админку, sessionid —
- * только после входа. Поэтому отказ ничего видимого не отключает,
- * но механизм рабочий: как только появится счётчик посещений или
- * пиксель, его нужно обернуть в hasAnalyticsConsent().
+ * Сам сайт необязательных cookie не ставит: csrftoken выдаётся только
+ * на странице входа в админку, sessionid — только после входа.
+ *
+ * А вот встроенная карта Яндекса ставит свои — yandexuid и ещё несколько,
+ * на домене yandex.ru. Удалить их отсюда невозможно: правило одного
+ * источника не даёт странице physicsday.ru читать и стирать чужие cookie.
+ * Единственный способ ими управлять — не загружать карту, пока посетитель
+ * не согласился. Этим занимается компонент MapEmbed.
  */
 
 export type ConsentChoice = "accepted" | "declined";
@@ -69,6 +72,12 @@ export function saveConsent(choice: ConsentChoice): void {
     // молча считать, что согласие получено.
   }
   applyConsent(choice);
+
+  // Компоненты, зависящие от согласия (карта, будущая аналитика),
+  // должны отреагировать сразу, без перезагрузки страницы.
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(CONSENT_CHANGE_EVENT, { detail: choice }));
+  }
 }
 
 /** Разрешил ли посетитель необязательные cookie. Отсутствие ответа — не разрешил. */
@@ -142,6 +151,9 @@ export function applyConsent(choice: ConsentChoice | null): void {
 
 /** Событие, которым подвал просит баннер открыться заново. */
 export const CONSENT_OPEN_EVENT = "cookie-consent:open";
+
+/** Событие изменения решения. Аргумент detail — новое значение. */
+export const CONSENT_CHANGE_EVENT = "cookie-consent:change";
 
 export function openConsentBanner(): void {
   window.dispatchEvent(new CustomEvent(CONSENT_OPEN_EVENT));

@@ -11,6 +11,7 @@ import { FlyingCats } from "@/components/animations/FlyingCats";
 import { UserRole } from "@/lib/types";
 import { SequentialFadeIn } from "@/components/animations/SequentialFadeIn";
 import { RegistrationClosed } from "@/components/RegistrationClosed";
+import { MapEmbed } from "@/components/ui/MapEmbed";
 import {
   formatEventDate,
   getRegistration,
@@ -322,14 +323,13 @@ export default function HomePage({ content }: { content: SiteContent }) {
           <div className="max-w-6xl mx-auto px-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-center">
               <div className="h-96 rounded-xl overflow-hidden shadow-lg">
-                <iframe
+                {/* Виджет Яндекса ставит свои cookie, поэтому грузится
+                    только после согласия — см. MapEmbed. */}
+                <MapEmbed
                   src="https://yandex.ru/map-widget/v1/?ll=83.093101%2C54.843242&z=18&pt=83.093101,54.843242,pm2rdm"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  style={{ position: "relative" }}
                   title="НГУ на карте"
-                ></iframe>
+                  externalUrl="https://yandex.ru/maps/?pt=83.093101,54.843242&z=16&l=map"
+                />
               </div>
 
               <div className="text-center lg:text-left">

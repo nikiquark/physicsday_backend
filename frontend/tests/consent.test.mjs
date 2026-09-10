@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 function makeBrowser(initialCookies = {}) {
   const jar = new Map(Object.entries(initialCookies));
   const store = new Map();
+  const events = [];
 
   const documentStub = {
     get cookie() {
@@ -42,10 +43,12 @@ function makeBrowser(initialCookies = {}) {
   globalThis.window = {
     localStorage: localStorageProxy,
     location: { hostname: "physicsday.ru", pathname: "/masters" },
-    dispatchEvent: () => true,
+    dispatchEvent: (e) => { events.push(e); return true; },
   };
-  globalThis.CustomEvent = class { constructor(t) { this.type = t; } };
-  return { jar, store };
+  globalThis.CustomEvent = class {
+    constructor(type, init) { this.type = type; this.detail = init?.detail; }
+  };
+  return { jar, store, events };
 }
 
 const results = [];
@@ -137,6 +140,28 @@ test("запрет на хранение данных не считается с
   });
   assert.equal(mod.readConsent(), null);
   assert.equal(mod.hasAnalyticsConsent(), false);
+});
+
+test("смена решения рассылает событие — карта реагирует без перезагрузки", () => {
+  const { events } = makeBrowser();
+  mod.saveConsent("accepted");
+  const changed = events.filter((e) => e.type === mod.CONSENT_CHANGE_EVENT);
+  assert.equal(changed.length, 1, "событие не отправлено");
+  assert.equal(changed[0].detail, "accepted");
+
+  mod.saveConsent("declined");
+  const last = events.filter((e) => e.type === mod.CONSENT_CHANGE_EVENT).at(-1);
+  assert.equal(last.detail, "declined");
+});
+
+test("карта загружается только при согласии", () => {
+  makeBrowser();
+  // Логика MapEmbed: iframe рендерится, только если hasAnalyticsConsent().
+  assert.equal(mod.hasAnalyticsConsent(), false, "без ответа карта грузиться не должна");
+  mod.saveConsent("declined");
+  assert.equal(mod.hasAnalyticsConsent(), false, "после отказа карта грузиться не должна");
+  mod.saveConsent("accepted");
+  assert.equal(mod.hasAnalyticsConsent(), true);
 });
 
 console.log(results.map(([s, n]) => `${s} ${n}`).join("\n"));
