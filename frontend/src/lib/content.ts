@@ -127,6 +127,7 @@ export const FALLBACK_CONTENT: SiteContent = {
     workshops: { ...CLOSED, slug: "workshops" },
     excursions: { ...CLOSED, slug: "excursions" },
     olympiads: { ...CLOSED, slug: "olympiads" },
+    drawing_contest: { ...CLOSED, slug: "drawing_contest" },
   },
   program: [],
   partners: [],

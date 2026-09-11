@@ -100,7 +100,18 @@ INSTALLED_APPS = [
     'physicsday_event',
     'olympiads',
     'excursions',
+    'contest',
 ]
+
+# Приём работ на конкурс рисунков — единственная форма, которая кладёт
+# на диск файлы по 15 МБ, поэтому у неё есть ограничение частоты.
+# Глобальные классы троттлинга намеренно не включены: остальные формы
+# принимают заявки без ограничений, как и раньше.
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'contest_artwork': '10/hour',
+    },
+}
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"

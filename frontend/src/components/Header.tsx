@@ -35,7 +35,7 @@ export default function Header({ settings, socials }: HeaderProps) {
                     </button>
                 </div>
                 <nav className="hidden lg:flex items-center space-x-4">
-                    <Link href="/#about" className="hover:text-blue-600 transition">О фестивале</Link>
+                    <Link href="/contest" className="hover:text-blue-600 transition">Конкурс рисунков</Link>
                     <Link href="/masters" className="hover:text-blue-600 transition">Мастер-классы</Link>
                     <Link href="/olympiads" className="hover:text-blue-600 transition">Олимпиады</Link>
                     <Link href="/excursions" className="hover:text-blue-600 transition">Экскурсии</Link>
@@ -50,7 +50,7 @@ export default function Header({ settings, socials }: HeaderProps) {
                     exit={{ opacity: 0, y: -10 }}
                     className="lg:hidden bg-white shadow-md px-4 pb-4 flex flex-col space-y-3"
                 >
-                    <Link onClick={() => setMenuOpen(false)} href="/#about" className="hover:text-blue-600 transition py-2">О фестивале</Link>
+                    <Link onClick={() => setMenuOpen(false)} href="/contest" className="hover:text-blue-600 transition py-2">Конкурс рисунков</Link>
                     <Link onClick={() => setMenuOpen(false)} href="/masters" className="hover:text-blue-600 transition py-2">Мастер-классы</Link>
                     <Link onClick={() => setMenuOpen(false)} href="/olympiads" className="hover:text-blue-600 transition py-2">Олимпиады</Link>
                     <Link onClick={() => setMenuOpen(false)} href="/excursions" className="hover:text-blue-600 transition py-2">Экскурсии</Link>

@@ -139,12 +139,14 @@ class RegistrationSection(models.Model):
     WORKSHOPS = 'workshops'
     EXCURSIONS = 'excursions'
     OLYMPIADS = 'olympiads'
+    DRAWING_CONTEST = 'drawing_contest'
 
     SLUG_CHOICES = [
         (PHYSICSDAY, 'ФизФест'),
         (WORKSHOPS, 'Мастер-классы'),
         (EXCURSIONS, 'Экскурсии'),
         (OLYMPIADS, 'Олимпиады'),
+        (DRAWING_CONTEST, 'Конкурс рисунков'),
     ]
 
     slug = models.SlugField('Раздел', max_length=32, choices=SLUG_CHOICES, unique=True)
@@ -337,12 +339,14 @@ class PageSeo(models.Model):
     WORKSHOPS = 'workshops'
     OLYMPIADS = 'olympiads'
     EXCURSIONS = 'excursions'
+    CONTEST = 'contest'
 
     SLUG_CHOICES = [
         (HOME, 'Главная'),
         (WORKSHOPS, 'Мастер-классы'),
         (OLYMPIADS, 'Олимпиады'),
         (EXCURSIONS, 'Экскурсии'),
+        (CONTEST, 'Конкурс рисунков'),
     ]
 
     slug = models.SlugField('Страница', max_length=32, choices=SLUG_CHOICES, unique=True)

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useModal } from "@/hooks/useModal";
@@ -42,6 +43,7 @@ const initialFormData: PhysicsDayFormData = {
 export default function HomePage({ content }: { content: SiteContent }) {
   const { settings, program, partners } = content;
   const registration = getRegistration(content, "physicsday");
+  const contestRegistration = getRegistration(content, "drawing_contest");
 
   // На мобильном «Главный корпус НГУ (Пирогова, 2)» не помещается в одну
   // строку — если формат админки «Название (Адрес)», разбиваем на две
@@ -203,6 +205,35 @@ export default function HomePage({ content }: { content: SiteContent }) {
                 </SequentialFadeIn>
               );
             })}
+          </div>
+        </FadeInSection>
+      </section>
+
+      {/* Drawing Contest Section */}
+      <section id="contest" className="py-12 bg-white px-4">
+        <FadeInSection>
+          <div className="max-w-5xl mx-auto bg-[#344EAD] text-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row items-center gap-6 p-8">
+            <img
+              src="/cat5.png"
+              alt="Котофизик ФизФеста"
+              className="w-40 md:w-56 h-auto shrink-0 drop-shadow-xl"
+            />
+            <div className="text-center md:text-left">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+                Конкурс рисунков «Приключения котофизиков в мире науки»
+              </h2>
+              <p className="text-blue-100 leading-relaxed mb-6">
+                Юные художники, ваш выход! Нарисуйте котофизиков ФизФеста в мире
+                науки, принесите оригинал на фестиваль — и работа попадёт на
+                выставку в НГУ. Авторов лучших рисунков ждут подарки.
+              </p>
+              <Link
+                href="/contest"
+                className="inline-block bg-white text-[#344EAD] font-semibold px-6 py-3 rounded-xl shadow hover:bg-gray-100 transition"
+              >
+                {contestRegistration.is_open ? "Подать работу" : "Приём работ завершён"}
+              </Link>
+            </div>
           </div>
         </FadeInSection>
       </section>

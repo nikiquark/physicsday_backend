@@ -27,6 +27,20 @@ export interface WorkshopParticipantData extends BaseParticipantData {
   workshop: number;
 }
 
+export interface ContestWorkData {
+  author_name: string;
+  age: number;
+  city: string;
+  school: string;
+  class_number: number | null;
+  title: string;
+  parent_name: string;
+  email: string;
+  phone: string;
+  publication_consent: boolean;
+  photo: File;
+}
+
 export interface ExcursionParticipantData {
   name: string;
   email: string;
@@ -73,6 +87,16 @@ export interface CreatedExcursionParticipant {
   underages_count: number;
   underages: string;
   institute: number;
+}
+
+export interface CreatedContestWork {
+  id: number;
+  author_name: string;
+  age: number;
+  city: string;
+  email: string;
+  phone: string;
+  title: string;
 }
 
 export interface Workshop {
@@ -198,6 +222,84 @@ class ApiService {
     });
   }
 
+  /**
+   * Работа на конкурс рисунков.
+   *
+   * Здесь XMLHttpRequest, а не fetch: fetch не умеет сообщать о ходе
+   * отправки, а фотография рисунка весит до 15 МБ — на мобильном
+   * интернете это десятки секунд, в которые человек видит только
+   * крутилку и жмёт кнопку второй раз.
+   */
+  createContestWork(
+    data: ContestWorkData,
+    onProgress?: (percent: number) => void,
+  ): Promise<CreatedContestWork> {
+    const body = new FormData();
+    body.append('author_name', data.author_name);
+    body.append('age', String(data.age));
+    body.append('city', data.city);
+    body.append('email', data.email);
+    body.append('phone', data.phone);
+    body.append('publication_consent', String(data.publication_consent));
+    body.append('photo', data.photo);
+    // Необязательные поля не отправляем пустыми: DRF иначе запишет
+    // в базу пустые строки вместо «не указано».
+    if (data.school) body.append('school', data.school);
+    if (data.title) body.append('title', data.title);
+    if (data.parent_name) body.append('parent_name', data.parent_name);
+    if (data.class_number !== null) body.append('class_number', String(data.class_number));
+
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open('POST', `${this.baseURL}/contest/works`);
+      request.withCredentials = true;
+      request.setRequestHeader('Accept', 'application/json');
+
+      // Content-Type выставляет браузер: в multipart нужна граница,
+      // которую руками не собрать.
+      const csrfToken = getCookie('csrftoken');
+      if (csrfToken) {
+        request.setRequestHeader('X-CSRFToken', csrfToken);
+      }
+
+      if (onProgress) {
+        request.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            onProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+      }
+
+      request.onload = () => {
+        let parsed: unknown = {};
+        try {
+          parsed = JSON.parse(request.responseText);
+        } catch {
+          parsed = {};
+        }
+
+        if (request.status >= 200 && request.status < 300) {
+          resolve(parsed as CreatedContestWork);
+          return;
+        }
+
+        const details = parsed as DRFErrorDetails;
+        const error: ApiError = {
+          message: details.detail || `HTTP error! status: ${request.status}`,
+          status: request.status,
+          details,
+        };
+        reject(error);
+      };
+
+      request.onerror = () => {
+        reject({ message: 'Failed to fetch', status: 0 } as ApiError);
+      };
+
+      request.send(body);
+    });
+  }
+
   // Workshops
   async getWorkshops(): Promise<Workshop[]> {
     const workshops = await this.makeRequest<Workshop[]>('/workshops/');
@@ -234,7 +336,9 @@ export const getErrorMessage = (error: unknown): string => {
     // Проверяем на ошибку дублирования участника
     if (error.details?.non_field_errors) {
       const duplicateError = error.details.non_field_errors.find(err => 
-        err.includes('Вы уже зарегистрировались на') || err.includes('Вы уже записались на')
+        err.includes('Вы уже зарегистрировались на') ||
+        err.includes('Вы уже записались на') ||
+        err.includes('Вы уже подали работу')
       );
       if (duplicateError) {
         return duplicateError;
@@ -247,9 +351,19 @@ export const getErrorMessage = (error: unknown): string => {
         if (error.details?.non_field_errors?.length) {
           return error.details.non_field_errors[0];
         }
+        // Файл проверяется и на сервере: понятный текст про формат
+        // или размер важнее общей фразы про поля.
+        if (Array.isArray(error.details?.photo) && error.details.photo.length) {
+          return error.details.photo[0];
+        }
         return 'Проверьте правильность заполнения всех полей.';
       case 406:
         return 'К сожалению, места закончились.';
+      case 413:
+        // До Django запрос не дошёл: файл обрезал nginx.
+        return 'Файл слишком большой. Попробуйте фото меньшего размера.';
+      case 429:
+        return 'С этого адреса отправлено слишком много заявок. Попробуйте позже.';
       case 500:
         return 'Ошибка сервера. Попробуйте позже.';
       default:

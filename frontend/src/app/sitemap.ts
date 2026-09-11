@@ -6,7 +6,7 @@ const SITE_URL = process.env.SITE_URL ?? "https://physicsday.ru";
  *  При серверном рендере она отдаётся маршрутом, как обычная страница. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  return ["", "/masters", "/olympiads", "/excursions"].map((path) => ({
+  return ["", "/masters", "/olympiads", "/excursions", "/contest"].map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: now,
     changeFrequency: "daily",

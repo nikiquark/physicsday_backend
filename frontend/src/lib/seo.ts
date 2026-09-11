@@ -10,6 +10,7 @@ const PATHS: Record<string, string> = {
   workshops: "/masters",
   olympiads: "/olympiads",
   excursions: "/excursions",
+  contest: "/contest",
 };
 
 /**

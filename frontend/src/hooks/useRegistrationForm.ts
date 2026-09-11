@@ -23,6 +23,17 @@ export interface WorkshopFormData extends StudentFormData {
   selectedWorkshop: number | null;
 }
 
+export interface ContestFormData extends BaseFormData {
+  /** Возраст хранится строкой: иначе пустое поле показывало бы «0». */
+  age: string;
+  school: string;
+  class_number: string;
+  title: string;
+  parent_name: string;
+  publicationConsent: boolean;
+  photo: File | null;
+}
+
 export interface ExcursionFormData {
   name: string;
   email: string;
@@ -36,7 +47,7 @@ export interface ExcursionFormData {
   selectedInstitute: number | null;
 }
 
-type FormDataType = BaseFormData | PhysicsDayFormData | StudentFormData | WorkshopFormData | ExcursionFormData;
+type FormDataType = BaseFormData | PhysicsDayFormData | StudentFormData | WorkshopFormData | ExcursionFormData | ContestFormData;
 
 interface UseRegistrationFormProps<T extends FormDataType> {
   initialData: T;
@@ -209,6 +220,30 @@ export const validateWorkshopForm = (data: WorkshopFormData): string | null => {
     return 'Необходимо выбрать мастер-класс для регистрации.';
   }
   
+  return null;
+};
+
+export const validateContestForm = (data: ContestFormData): string | null => {
+  if (!data.age.trim()) {
+    return 'Укажите возраст автора работы.';
+  }
+
+  const age = parseInt(data.age, 10);
+  if (isNaN(age) || age < 1 || age > 100) {
+    return 'Проверьте возраст автора: нужно число.';
+  }
+
+  // Возраст вне 5–17 лет заявку не блокирует — об условиях конкурса
+  // предупреждает подсказка под полем, решение принимает жюри.
+
+  if (!data.photo) {
+    return 'Приложите фото или скан рисунка.';
+  }
+
+  if (!data.publicationConsent) {
+    return 'Необходимо согласие на публикацию работы.';
+  }
+
   return null;
 };
 
