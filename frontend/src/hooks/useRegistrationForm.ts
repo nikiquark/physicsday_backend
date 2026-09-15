@@ -26,8 +26,6 @@ export interface WorkshopFormData extends StudentFormData {
 export interface ContestFormData extends BaseFormData {
   /** Возраст хранится строкой: иначе пустое поле показывало бы «0». */
   age: string;
-  school: string;
-  class_number: string;
   title: string;
   parent_name: string;
   publicationConsent: boolean;

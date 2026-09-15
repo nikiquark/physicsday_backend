@@ -66,8 +66,6 @@ const initialFormData: ContestFormData = {
   name: "",
   age: "",
   city: "",
-  school: "",
-  class_number: "",
   title: "",
   parent_name: "",
   email: "",
@@ -166,8 +164,8 @@ export default function ContestPage({ content }: { content: SiteContent }) {
         author_name: data.name.trim(),
         age: parseInt(data.age, 10),
         city: data.city.trim(),
-        school: data.school.trim(),
-        class_number: data.class_number === "" ? null : parseInt(data.class_number, 10),
+        school: "",
+        class_number: null,
         title: data.title.trim(),
         parent_name: data.parent_name.trim(),
         email: data.email.trim(),
@@ -273,13 +271,9 @@ export default function ContestPage({ content }: { content: SiteContent }) {
               Конкурс рисунков<br />
               «Приключения котофизиков<br className="hidden sm:inline" /> в мире науки»
             </h1>
-            <p className="text-base sm:text-lg text-gray-200 mb-8 leading-relaxed max-w-2xl">
-              Нарисуйте котофизиков ФизФеста в мире науки — и приходите за
-              подарками на фестиваль 27 сентября 2026 года.
-            </p>
             <a
               href="#apply"
-              className="inline-block bg-white text-[#344EAD] font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
+              className="mt-8 inline-block bg-white text-[#344EAD] font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:bg-gray-100 transition-all duration-300"
             >
               {registration.is_open ? "Подать работу" : "Условия конкурса"}
             </a>
@@ -463,34 +457,10 @@ export default function ContestPage({ content }: { content: SiteContent }) {
               />
 
               <input
-                name="school"
-                className={inputClass}
-                type="text"
-                placeholder="Школа (если есть)"
-                value={formData.school}
-                onChange={handleInputChange}
-              />
-
-              <select
-                name="class_number"
-                className={inputClass}
-                value={formData.class_number}
-                onChange={handleInputChange}
-              >
-                <option value="">Класс (если есть)</option>
-                <option value="0">Дошкольник</option>
-                {Array.from({ length: 11 }, (_, index) => index + 1).map((grade) => (
-                  <option key={grade} value={grade}>
-                    {grade} класс
-                  </option>
-                ))}
-              </select>
-
-              <input
                 name="title"
                 className={inputClass}
                 type="text"
-                placeholder="Название работы (если есть)"
+                placeholder="Название работы"
                 value={formData.title}
                 onChange={handleInputChange}
               />
