@@ -292,29 +292,24 @@ export default function ContestPage({ content }: { content: SiteContent }) {
         </div>
       </section>
 
-      {/* Что нужно сделать */}
-      <section className="py-12 bg-white px-4">
+      {/* Что нужно сделать + темы */}
+      <section className="py-14 md:py-20 bg-white px-4">
         <FadeInSection>
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="max-w-3xl mx-auto text-center mb-14">
             <h2 className="text-3xl font-bold mb-6">Что нужно сделать</h2>
             <p className="text-lg text-gray-700 leading-relaxed">
               Нарисовать рисунок на тему науки и её символики, где главными
               героями являются котофизики ФизФеста.
             </p>
           </div>
-        </FadeInSection>
-      </section>
 
-      {/* Темы */}
-      <section className="py-12 bg-gray-50 px-4">
-        <FadeInSection>
-          <h2 className="text-center text-3xl font-bold mb-12">Это может быть</h2>
+          <h3 className="text-center text-2xl font-bold mb-12">Это может быть</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {TOPICS.map((topic, index) => {
               const Icon = topic.icon;
               return (
                 <SequentialFadeIn key={topic.title} index={index}>
-                  <div className="h-full bg-white rounded-2xl shadow-lg p-6 flex gap-4">
+                  <div className="h-full bg-gray-50 rounded-2xl shadow-lg p-6 flex gap-4">
                     <div className="shrink-0 w-12 h-12 rounded-xl bg-[#344EAD] text-white flex items-center justify-center">
                       <Icon className="w-6 h-6" />
                     </div>
@@ -330,48 +325,23 @@ export default function ContestPage({ content }: { content: SiteContent }) {
         </FadeInSection>
       </section>
 
-      {/* Кто может участвовать */}
-      <section className="py-12 bg-white px-4">
+      {/* Кто может участвовать + как подать работу */}
+      <section className="py-14 md:py-20 bg-gray-50 px-4">
         <FadeInSection>
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center mb-14">
             <h2 className="text-3xl font-bold mb-6">Кто может участвовать</h2>
             <p className="text-lg text-gray-700 leading-relaxed">
               Дети в возрасте от {MIN_AGE} до {MAX_AGE} лет, принимающие участие
               в ФизФесте 27 сентября 2026 года.
             </p>
           </div>
-        </FadeInSection>
-      </section>
 
-      {/* Как подать работу */}
-      <section className="py-12 bg-gray-50 px-4">
-        <FadeInSection>
-          <h2 className="text-center text-3xl font-bold mb-12">Как подать работу</h2>
+          <h3 className="text-center text-2xl font-bold mb-12">Как подать работу</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-[#344EAD] text-white flex items-center justify-center font-bold">
                   1
-                </div>
-                <h3 className="text-xl font-semibold">Принести оригинал</h3>
-              </div>
-              <p className="text-gray-700 mb-4">
-                Рисунки принимаются в оригинале в формате A4.
-              </p>
-              <p className="flex items-start gap-2 text-gray-700 mb-2">
-                <Calendar className="w-5 h-5 mt-0.5 shrink-0 text-[#344EAD]" />
-                27 сентября 2026 года, с 10:00 до 13:00
-              </p>
-              <p className="flex items-start gap-2 text-gray-700">
-                <MapPin className="w-5 h-5 mt-0.5 shrink-0 text-[#344EAD]" />
-                Площадка 2-го этажа главного корпуса НГУ, ул. Пирогова, 2
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[#344EAD] text-white flex items-center justify-center font-bold">
-                  2
                 </div>
                 <h3 className="text-xl font-semibold">Заполнить заявку</h3>
               </div>
@@ -386,12 +356,33 @@ export default function ContestPage({ content }: { content: SiteContent }) {
                 {registration.is_open ? "Перейти к заявке" : "Открыть форму"}
               </a>
             </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-[#344EAD] text-white flex items-center justify-center font-bold">
+                  2
+                </div>
+                <h3 className="text-xl font-semibold">Принести оригинал</h3>
+              </div>
+              <p className="text-gray-700 mb-4">
+                Рисунки принимаются в оригинале в формате A4. Перед этим нужно
+                заранее подать заявку на сайте.
+              </p>
+              <p className="flex items-start gap-2 text-gray-700 mb-2">
+                <Calendar className="w-5 h-5 mt-0.5 shrink-0 text-[#344EAD]" />
+                27 сентября 2026 года, с 10:00 до 13:00
+              </p>
+              <p className="flex items-start gap-2 text-gray-700">
+                <MapPin className="w-5 h-5 mt-0.5 shrink-0 text-[#344EAD]" />
+                Площадка 2-го этажа главного корпуса НГУ, ул. Пирогова, 2
+              </p>
+            </div>
           </div>
         </FadeInSection>
       </section>
 
-      {/* Выставка и публикация */}
-      <section className="py-10 bg-[#344EAD] text-white px-4">
+      {/* Выставка, публикация и подарки */}
+      <section className="py-14 md:py-16 bg-[#344EAD] text-white px-4">
         <FadeInSection>
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-xl font-semibold mb-4">
@@ -410,6 +401,13 @@ export default function ContestPage({ content }: { content: SiteContent }) {
               </a>
               .
             </p>
+
+            <div className="mt-10 pt-10 border-t border-white/20">
+              <Award className="w-12 h-12 mx-auto mb-4" />
+              <p className="text-xl font-semibold">
+                Авторов лучших рисунков ждут подарки от организаторов ФизФеста
+              </p>
+            </div>
           </div>
         </FadeInSection>
       </section>
@@ -422,11 +420,7 @@ export default function ContestPage({ content }: { content: SiteContent }) {
       ) : (
         <section id="apply" className="py-12 bg-white px-4">
           <FadeInSection>
-            <h2 className="text-center text-3xl font-bold mb-4">Заявка на конкурс</h2>
-            <p className="text-center text-gray-600 mb-12 max-w-xl mx-auto">
-              Заявку за ребёнка заполняет взрослый. От одного автора принимается
-              одна работа.
-            </p>
+            <h2 className="text-center text-3xl font-bold mb-12">Заявка на конкурс</h2>
 
             <div className="max-w-xl mx-auto grid gap-6">
               <input
@@ -644,18 +638,6 @@ export default function ContestPage({ content }: { content: SiteContent }) {
           </FadeInSection>
         </section>
       )}
-
-      {/* Подарки */}
-      <section className="py-12 bg-gray-50 px-4">
-        <FadeInSection>
-          <div className="max-w-3xl mx-auto text-center">
-            <Award className="w-12 h-12 text-[#344EAD] mx-auto mb-4" />
-            <p className="text-xl font-semibold">
-              Авторов лучших рисунков ждут подарки от организаторов ФизФеста
-            </p>
-          </div>
-        </FadeInSection>
-      </section>
 
       <Footer settings={settings} socials={socials} />
 
